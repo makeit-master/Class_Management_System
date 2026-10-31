@@ -4,6 +4,7 @@ import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
 import TeachersPage from "../../features/teachers/TeachersPage";
 import AttendancePage from "../../features/attendance/AttendancePage";
+import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -54,6 +55,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <AttendancePage />
             ) : activePage === "Grades" ? (
               <GradesPage />
+            ) : activePage === "Schedule" ? (
+              <SchedulePage />
             ) : (
               children
             )}
