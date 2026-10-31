@@ -6,6 +6,7 @@ import TeachersPage from "../../features/teachers/TeachersPage";
 import AttendancePage from "../../features/attendance/AttendancePage";
 import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
+import SettingsPage from "../../features/settings/SettingsPage";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -57,6 +58,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <GradesPage />
             ) : activePage === "Schedule" ? (
               <SchedulePage />
+            ) : activePage === "Settings" ? (
+              <SettingsPage isDark={isDark} onToggleTheme={handleToggleTheme} />
             ) : (
               children
             )}
