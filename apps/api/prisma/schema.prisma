@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id        String       @id @default(uuid())
+  fullName  String
+  email     String       @unique
+  role      UserRole     @default(STUDENT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  teachingClasses Class[]      @relation("ClassTeacher")
+  enrollments     Enrollment[]
+}
+
+model Class {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  teacherId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  teacher     User         @relation("ClassTeacher", fields: [teacherId], references: [id])
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String
+  classId    String
+  enrolledAt DateTime @default(now())
+
+  student User  @relation(fields: [studentId], references: [id])
+  class   Class @relation(fields: [classId], references: [id])
+
+  @@unique([studentId, classId])
+}
