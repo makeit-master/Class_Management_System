@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import DashboardPage from "../../features/dashboard/DashboardPage";
+import ClassesPage from "../../features/classes/ClassesPage";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -38,6 +39,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <main className="main-content">
           {activePage === "Dashboard" ? (
             <DashboardPage navigate={handleNavigate} notify={handleNotify} />
+          ) : activePage === "Classes" ? (
+            <ClassesPage />
           ) : (
             children
           )}
