@@ -40,7 +40,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       />
 
       <div className="app-main">
-        <Header pageTitle={activePage} />
+        <Header pageTitle={activePage} onNavigate={handleNavigate} />
 
         <main className="main-content">
           <main className="main-content">

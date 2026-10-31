@@ -1,0 +1,267 @@
+.app-container .app-header {
+  position: relative;
+  z-index: 40;
+  min-height: 100px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  overflow: visible;
+}
+.app-container .header-title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+.app-container .header-title p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.app-container .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.app-container .search-box {
+  width: 250px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+}
+.app-container .search-box input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 12px;
+}
+.app-container .search-box input::placeholder {
+  color: var(--text-muted);
+}
+.app-container .search-shortcut {
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.app-container .header-popovers {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.app-container .header-popover-anchor {
+  position: relative;
+}
+.app-container .header-icon-button,
+.app-container .header-user {
+  display: flex;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.app-container .header-icon-button {
+  width: 40px;
+}
+.app-container .header-icon-button:hover,
+.app-container .header-user:hover {
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+.app-container .notification-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  top: 8px;
+  right: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.app-container .header-user {
+  padding: 5px 8px;
+  gap: 8px;
+}
+.app-container .header-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+}
+.app-container .header-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(340px, calc(100vw - 100px));
+  padding: 8px;
+  z-index: 1000;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 13px;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.32);
+}
+.app-container .header-dropdown-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+.app-container .header-dropdown-heading span {
+  font-size: 11px;
+  color: var(--primary);
+  background: var(--bg-tertiary);
+  padding: 4px 7px;
+  border-radius: 20px;
+}
+.app-container .header-notification {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  padding: 12px;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.app-container .header-notification:hover,
+.app-container .header-user-menu button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+.app-container .header-notification span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.app-container .header-notification strong {
+  font-size: 12px;
+}
+.app-container .header-notification small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.app-container .header-unread-dot {
+  height: 7px;
+  width: 7px;
+  flex-shrink: 0;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.app-container .header-clear {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.app-container .header-empty,
+.app-container .header-demo-caption {
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.app-container .header-demo-caption {
+  border-top: 1px solid var(--border-color);
+}
+.app-container .header-user-menu {
+  width: 240px;
+}
+.app-container .header-user-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+.app-container .header-user-heading small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.app-container .header-user-menu button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.app-container .header-user-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+@media (max-width: 1000px) {
+  .app-container .app-header {
+    padding: 20px;
+  }
+  .app-container .search-box {
+    width: 190px;
+  }
+}
+@media (max-width: 700px) {
+  .app-container .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .app-container .header-actions {
+    width: 100%;
+  }
+  .app-container .search-box {
+    flex: 1;
+    width: auto;
+  }
+  .app-container .header-popovers {
+    gap: 8px;
+  }
+}
+@media (max-width: 480px) {
+  .app-container .search-shortcut {
+    display: none;
+  }
+  .app-container .app-header {
+    padding: 14px;
+  }
+  .app-container .header-title h1 {
+    font-size: 20px;
+  }
+}
