@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/src/index.js",
+    "db:check": "tsx src/scripts/check-db.ts"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

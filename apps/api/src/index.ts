@@ -1,17 +1,19 @@
-import express from "express";
+import { app } from "./app.js";
+import { env } from "./config/env.js";
+import { disconnectPrisma } from "./lib/prisma.js";
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const server = app.listen(env.port, "127.0.0.1", () => {
+  console.log(`API running at http://127.0.0.1:${env.port}`);
+});
 
-app.use(express.json());
-
-app.get("/api/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-    message: "Class Management System API is running",
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down...`);
+  server.close(async () => {
+    try { await disconnectPrisma(); } catch (err) { console.error("Prisma shutdown failed", err); }
   });
-});
-
-app.listen(PORT, () => {
-  console.log(`API server is running at http://localhost:${PORT}`);
-});
+}
+process.on("SIGINT", () => { void shutdown("SIGINT"); });
+process.on("SIGTERM", () => { void shutdown("SIGTERM"); });
