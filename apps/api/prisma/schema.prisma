@@ -13,38 +13,176 @@ enum UserRole {
   STUDENT
 }
 
-model User {
-  id        String       @id @default(uuid())
-  fullName  String
-  email     String       @unique
-  role      UserRole     @default(STUDENT)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  teachingClasses Class[]      @relation("ClassTeacher")
-  enrollments     Enrollment[]
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
 }
 
-model Class {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  teacherId   String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
 
-  teacher     User         @relation("ClassTeacher", fields: [teacherId], references: [id])
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+// Account identity and access
+model User {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherProfile Teacher?
+}
+
+// Teacher business profile
+model Teacher {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  employeeCode String?  @unique
+  subject      String?
+  phone        String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  classes Class[]
+}
+
+// Students do not need login accounts in V1
+model Student {
+  id          String    @id @default(uuid())
+  studentCode String    @unique
+  fullName    String
+  email       String?
+  phone       String?
+  dateOfBirth DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   enrollments Enrollment[]
 }
 
+// Class managed by a teacher
+model Class {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  subject     String?
+  room        String?
+  teacherId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher     Teacher        @relation(fields: [teacherId], references: [id])
+  enrollments Enrollment[]
+  schedules   Schedule[]
+  sessions    ClassSession[]
+  assessments Assessment[]
+
+  @@index([teacherId])
+}
+
+// Many-to-many relationship between Student and Class
 model Enrollment {
-  id         String   @id @default(uuid())
+  id         String           @id @default(uuid())
   studentId  String
   classId    String
-  enrolledAt DateTime @default(now())
+  status     EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime         @default(now())
 
-  student User  @relation(fields: [studentId], references: [id])
-  class   Class @relation(fields: [classId], references: [id])
+  student    Student      @relation(fields: [studentId], references: [id])
+  class      Class        @relation(fields: [classId], references: [id])
+  attendance Attendance[]
+  grades     Grade[]
 
   @@unique([studentId, classId])
+  @@index([classId])
+}
+
+// Recurring teaching schedule
+model Schedule {
+  id        String  @id @default(uuid())
+  classId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  room      String?
+
+  class    Class          @relation(fields: [classId], references: [id])
+  sessions ClassSession[]
+
+  @@index([classId])
+}
+
+// Actual class meeting
+model ClassSession {
+  id         String        @id @default(uuid())
+  classId    String
+  scheduleId String?
+  startsAt   DateTime
+  endsAt     DateTime
+  status     SessionStatus @default(SCHEDULED)
+
+  class      Class        @relation(fields: [classId], references: [id])
+  schedule   Schedule?    @relation(fields: [scheduleId], references: [id])
+  attendance Attendance[]
+
+  @@unique([classId, startsAt])
+  @@index([scheduleId])
+}
+
+// Attendance for one enrollment in one session
+model Attendance {
+  id           String           @id @default(uuid())
+  enrollmentId String
+  sessionId    String
+  status       AttendanceStatus
+  note         String?
+  markedAt     DateTime         @default(now())
+
+  enrollment Enrollment   @relation(fields: [enrollmentId], references: [id])
+  session    ClassSession @relation(fields: [sessionId], references: [id])
+
+  @@unique([enrollmentId, sessionId])
+  @@index([sessionId])
+}
+
+// Assessment definition
+model Assessment {
+  id        String   @id @default(uuid())
+  classId   String
+  title     String
+  maxScore  Decimal  @default(100) @db.Decimal(8, 2)
+  weight    Decimal? @db.Decimal(5, 2)
+  createdAt DateTime @default(now())
+
+  class  Class   @relation(fields: [classId], references: [id])
+  grades Grade[]
+
+  @@index([classId])
+}
+
+// Student score for an assessment
+model Grade {
+  id           String   @id @default(uuid())
+  enrollmentId String
+  assessmentId String
+  score        Decimal  @db.Decimal(8, 2)
+  updatedAt    DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@unique([enrollmentId, assessmentId])
+  @@index([assessmentId])
 }
