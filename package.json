@@ -13,5 +13,9 @@
     "dev:api": "npm run dev --workspace=@cms/api",
     "build": "npm run build --workspace=@cms/web",
     "lint": "npm run lint --workspace=@cms/web"
+  },
+  "dependencies": {
+    "lucide-react": "^1.66.0",
+    "react-router-dom": "^7.18.5"
   }
 }
