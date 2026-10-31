@@ -3,6 +3,7 @@ import DashboardPage from "../../features/dashboard/DashboardPage";
 import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
 import TeachersPage from "../../features/teachers/TeachersPage";
+import AttendancePage from "../../features/attendance/AttendancePage";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -39,17 +40,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <Header pageTitle={activePage} />
 
         <main className="main-content">
-          {activePage === "Dashboard" ? (
-            <DashboardPage navigate={handleNavigate} notify={handleNotify} />
-          ) : activePage === "Classes" ? (
-            <ClassesPage />
-          ) : activePage === "Students" ? (
-            <StudentsPage />
-          ) : activePage === "Teachers" ? (
-            <TeachersPage />
-          ) : (
-            children
-          )}
+          <main className="main-content">
+            {activePage === "Dashboard" ? (
+              <DashboardPage navigate={handleNavigate} notify={handleNotify} />
+            ) : activePage === "Classes" ? (
+              <ClassesPage />
+            ) : activePage === "Students" ? (
+              <StudentsPage />
+            ) : activePage === "Teachers" ? (
+              <TeachersPage />
+            ) : activePage === "Attendance" ? (
+              <AttendancePage />
+            ) : (
+              children
+            )}
+          </main>
         </main>
       </div>
     </div>
