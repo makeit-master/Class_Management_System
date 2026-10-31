@@ -8,14 +8,19 @@ import {
   LogOut,
   CheckCheck,
 } from "lucide-react";
+
+import type { AuthUser } from "../../auth/auth-api";
 import "./Header.css";
 
 type HeaderProps = {
   pageTitle: string;
   onNavigate?: (page: string) => void;
+  onLogout: () => void;
+  user: AuthUser | null;
 };
 
 type OpenMenu = "notifications" | "user" | null;
+
 const initialNotifications = [
   {
     id: 1,
@@ -37,23 +42,40 @@ const initialNotifications = [
   },
 ];
 
-export default function Header({ pageTitle, onNavigate }: HeaderProps) {
+export default function Header({
+  pageTitle,
+  onNavigate,
+  onLogout,
+  user,
+}: HeaderProps) {
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [notifications, setNotifications] = useState(initialNotifications);
+
   const popoverRef = useRef<HTMLDivElement>(null);
   const unread = notifications.length;
 
+  const userName = user?.fullName?.trim() || "Teacher";
+  const userInitial = Array.from(userName)[0]?.toUpperCase() || "T";
+  const userRole = user?.role === "ADMIN" ? "Administrator" : "Teacher account";
+
   useEffect(() => {
     if (!openMenu) return;
+
     const onPointerDown = (event: PointerEvent) => {
-      if (!popoverRef.current?.contains(event.target as Node))
+      if (!popoverRef.current?.contains(event.target as Node)) {
         setOpenMenu(null);
+      }
     };
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenMenu(null);
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+      }
     };
+
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
@@ -65,12 +87,18 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
     setOpenMenu(null);
   };
 
+  const handleLogout = () => {
+    setOpenMenu(null);
+    onLogout();
+  };
+
   return (
     <header className="app-header">
       <div className="header-title">
         <h1>{pageTitle}</h1>
         <p>Welcome back! Here's what's happening today.</p>
       </div>
+
       <div className="header-actions">
         <div className="search-box">
           <Search size={18} aria-hidden="true" />
@@ -81,7 +109,9 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
           />
           <span className="search-shortcut">Search</span>
         </div>
+
         <div className="header-popovers" ref={popoverRef}>
+          {/* Notifications */}
           <div className="header-popover-anchor">
             <button
               type="button"
@@ -90,14 +120,15 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
               aria-haspopup="true"
               aria-expanded={openMenu === "notifications"}
               onClick={() =>
-                setOpenMenu((p) =>
-                  p === "notifications" ? null : "notifications",
+                setOpenMenu((previous) =>
+                  previous === "notifications" ? null : "notifications",
                 )
               }
             >
               <Bell size={19} />
               {unread > 0 && <span className="notification-dot" />}
             </button>
+
             {openMenu === "notifications" && (
               <section
                 className="header-dropdown notifications-menu"
@@ -107,16 +138,20 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
                   <strong>Notifications</strong>
                   <span>{unread} new</span>
                 </div>
-                {notifications.length ? (
+
+                {notifications.length > 0 ? (
                   notifications.map((item) => (
                     <button
                       type="button"
                       className="header-notification"
                       key={item.id}
                       onClick={() => {
-                        setNotifications((p) =>
-                          p.filter((n) => n.id !== item.id),
+                        setNotifications((previous) =>
+                          previous.filter(
+                            (notification) => notification.id !== item.id,
+                          ),
                         );
+
                         goTo(item.page);
                       }}
                     >
@@ -130,21 +165,26 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
                 ) : (
                   <p className="header-empty">You're all caught up.</p>
                 )}
-                {!!notifications.length && (
+
+                {notifications.length > 0 && (
                   <button
                     type="button"
                     className="header-clear"
                     onClick={() => setNotifications([])}
                   >
-                    <CheckCheck size={15} /> Mark all as read
+                    <CheckCheck size={15} />
+                    Mark all as read
                   </button>
                 )}
+
                 <p className="header-demo-caption">
                   Demo notifications, not connected to the API yet.
                 </p>
               </section>
             )}
           </div>
+
+          {/* User menu */}
           <div className="header-popover-anchor">
             <button
               type="button"
@@ -152,32 +192,37 @@ export default function Header({ pageTitle, onNavigate }: HeaderProps) {
               aria-label="Open user menu"
               aria-haspopup="true"
               aria-expanded={openMenu === "user"}
-              onClick={() => setOpenMenu((p) => (p === "user" ? null : "user"))}
+              onClick={() =>
+                setOpenMenu((previous) => (previous === "user" ? null : "user"))
+              }
             >
-              <span className="header-avatar">A</span>
+              <span className="header-avatar">{userInitial}</span>
               <ChevronDown size={16} />
             </button>
+
             {openMenu === "user" && (
               <section
                 className="header-dropdown header-user-menu"
                 aria-label="User menu"
               >
                 <div className="header-user-heading">
-                  <strong>Admin User</strong>
-                  <small>Teacher account · Demo</small>
+                  <strong>{userName}</strong>
+                  <small>{userRole}</small>
                 </div>
+
                 <button type="button" onClick={() => goTo("Settings")}>
-                  <UserRound size={16} /> My profile
+                  <UserRound size={16} />
+                  My profile
                 </button>
+
                 <button type="button" onClick={() => goTo("Settings")}>
-                  <Settings size={16} /> Settings
+                  <Settings size={16} />
+                  Settings
                 </button>
-                <button
-                  type="button"
-                  disabled
-                  title="Authentication not implemented yet"
-                >
-                  <LogOut size={16} /> Sign out (coming soon)
+
+                <button type="button" onClick={handleLogout}>
+                  <LogOut size={16} />
+                  Sign out
                 </button>
               </section>
             )}

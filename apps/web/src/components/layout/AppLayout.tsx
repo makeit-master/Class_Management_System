@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+
 import DashboardPage from "../../features/dashboard/DashboardPage";
 import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
@@ -7,6 +8,9 @@ import AttendancePage from "../../features/attendance/AttendancePage";
 import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
 import SettingsPage from "../../features/settings/SettingsPage";
+
+import { useAuth } from "../../auth/AuthContext";
+
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -17,6 +21,8 @@ type AppLayoutProps = {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [activePage, setActivePage] = useState("Dashboard");
   const [isDark, setIsDark] = useState(true);
+
+  const { user, logout } = useAuth();
 
   const handleNavigate = (page: string) => {
     setActivePage(page);
@@ -30,6 +36,45 @@ export default function AppLayout({ children }: AppLayoutProps) {
     window.alert(message);
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
+  const renderPage = () => {
+    switch (activePage) {
+      case "Dashboard":
+        return (
+          <DashboardPage navigate={handleNavigate} notify={handleNotify} />
+        );
+
+      case "Classes":
+        return <ClassesPage />;
+
+      case "Students":
+        return <StudentsPage />;
+
+      case "Teachers":
+        return <TeachersPage />;
+
+      case "Attendance":
+        return <AttendancePage />;
+
+      case "Grades":
+        return <GradesPage />;
+
+      case "Schedule":
+        return <SchedulePage />;
+
+      case "Settings":
+        return (
+          <SettingsPage isDark={isDark} onToggleTheme={handleToggleTheme} />
+        );
+
+      default:
+        return children;
+    }
+  };
+
   return (
     <div className={`app-container ${isDark ? "dark-theme" : "light-theme"}`}>
       <Sidebar
@@ -37,34 +82,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
         onNavigate={handleNavigate}
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
+        onLogout={handleLogout}
+        user={user}
       />
 
       <div className="app-main">
-        <Header pageTitle={activePage} onNavigate={handleNavigate} />
+        <Header
+          pageTitle={activePage}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+          user={user}
+        />
 
-        <main className="main-content">
-          <main className="main-content">
-            {activePage === "Dashboard" ? (
-              <DashboardPage navigate={handleNavigate} notify={handleNotify} />
-            ) : activePage === "Classes" ? (
-              <ClassesPage />
-            ) : activePage === "Students" ? (
-              <StudentsPage />
-            ) : activePage === "Teachers" ? (
-              <TeachersPage />
-            ) : activePage === "Attendance" ? (
-              <AttendancePage />
-            ) : activePage === "Grades" ? (
-              <GradesPage />
-            ) : activePage === "Schedule" ? (
-              <SchedulePage />
-            ) : activePage === "Settings" ? (
-              <SettingsPage isDark={isDark} onToggleTheme={handleToggleTheme} />
-            ) : (
-              children
-            )}
-          </main>
-        </main>
+        <main className="main-content">{renderPage()}</main>
       </div>
     </div>
   );

@@ -14,6 +14,8 @@ import {
   PanelLeftOpen,
   LayoutDashboard,
 } from "lucide-react";
+
+import type { AuthUser } from "../../auth/auth-api";
 import "./Sidebar.css";
 
 type SidebarProps = {
@@ -21,6 +23,8 @@ type SidebarProps = {
   onNavigate: (page: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onLogout: () => void;
+  user: AuthUser | null;
 };
 
 const groups = [
@@ -48,22 +52,38 @@ export default function Sidebar({
   onNavigate,
   isDark,
   onToggleTheme,
+  onLogout,
+  user,
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+
+  // Authenticated user information
+  const userName = user?.fullName?.trim() || "Teacher";
+  const userInitial = Array.from(userName)[0]?.toUpperCase() || "T";
+
+  const userRole = user?.role === "ADMIN" ? "Administrator" : "Teacher";
+
+  const handleLogout = () => {
+    onLogout();
+  };
+
   return (
     <aside
       className={`sidebar ${collapsed ? "sidebar--collapsed" : ""}`}
       aria-label="Main navigation"
     >
+      {/* Brand */}
       <div className="sidebar-logo">
         <div className="logo-icon">
           <GraduationCap size={20} />
         </div>
+
         <span className="sidebar-label sidebar-brand">ClassFlow</span>
+
         <button
           type="button"
           className="sidebar-collapse"
-          onClick={() => setCollapsed((v) => !v)}
+          onClick={() => setCollapsed((previous) => !previous)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-expanded={!collapsed}
@@ -75,22 +95,28 @@ export default function Sidebar({
           )}
         </button>
       </div>
+
+      {/* User profile */}
       <div
         className="sidebar-profile"
-        title={collapsed ? "Admin User · Administrator" : undefined}
+        title={collapsed ? `${userName} · ${userRole}` : undefined}
       >
-        <div className="profile-avatar">A</div>
+        <div className="profile-avatar">{userInitial}</div>
+
         <div className="profile-info sidebar-label">
-          <strong>Admin User</strong>
-          <span>Administrator</span>
+          <strong>{userName}</strong>
+          <span>{userRole}</span>
         </div>
       </div>
+
+      {/* Navigation */}
       <nav className="sidebar-nav" aria-label="Pages">
         {groups.map((group) => (
           <div className="menu-section" key={group.title}>
             <p className="menu-section-title">
               {collapsed ? "· · ·" : group.title}
             </p>
+
             {group.items.map(({ label, icon: Icon }) => (
               <button
                 type="button"
@@ -98,7 +124,9 @@ export default function Sidebar({
                 title={collapsed ? label : undefined}
                 aria-label={label}
                 aria-current={activePage === label ? "page" : undefined}
-                className={`sidebar-item ${activePage === label ? "active" : ""}`}
+                className={`sidebar-item ${
+                  activePage === label ? "active" : ""
+                }`}
                 onClick={() => onNavigate(label)}
               >
                 <Icon size={18} aria-hidden="true" />
@@ -108,6 +136,8 @@ export default function Sidebar({
           </div>
         ))}
       </nav>
+
+      {/* Bottom actions */}
       <div className="sidebar-bottom">
         <button
           type="button"
@@ -117,13 +147,17 @@ export default function Sidebar({
           aria-label={isDark ? "Light Mode" : "Dark Mode"}
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
+
           <span className="sidebar-label">
             {isDark ? "Light Mode" : "Dark Mode"}
           </span>
         </button>
+
         <button
           type="button"
-          className={`sidebar-item ${activePage === "Settings" ? "active" : ""}`}
+          className={`sidebar-item ${
+            activePage === "Settings" ? "active" : ""
+          }`}
           onClick={() => onNavigate("Settings")}
           title={collapsed ? "Settings" : undefined}
           aria-label="Settings"
@@ -131,12 +165,14 @@ export default function Sidebar({
           <Settings size={18} />
           <span className="sidebar-label">Settings</span>
         </button>
+
+        {/* Functional logout */}
         <button
           type="button"
           className="sidebar-item logout"
-          disabled
-          title="Logout available after authentication is implemented"
-          aria-label="Logout (not available yet)"
+          onClick={handleLogout}
+          title={collapsed ? "Logout" : undefined}
+          aria-label="Logout"
         >
           <LogOut size={18} />
           <span className="sidebar-label">Logout</span>
