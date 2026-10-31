@@ -28,6 +28,7 @@ export type EnrollmentMinAggregateOutputType = {
   id: string | null
   studentId: string | null
   classId: string | null
+  status: $Enums.EnrollmentStatus | null
   enrolledAt: Date | null
 }
 
@@ -35,6 +36,7 @@ export type EnrollmentMaxAggregateOutputType = {
   id: string | null
   studentId: string | null
   classId: string | null
+  status: $Enums.EnrollmentStatus | null
   enrolledAt: Date | null
 }
 
@@ -42,6 +44,7 @@ export type EnrollmentCountAggregateOutputType = {
   id: number
   studentId: number
   classId: number
+  status: number
   enrolledAt: number
   _all: number
 }
@@ -51,6 +54,7 @@ export type EnrollmentMinAggregateInputType = {
   id?: true
   studentId?: true
   classId?: true
+  status?: true
   enrolledAt?: true
 }
 
@@ -58,6 +62,7 @@ export type EnrollmentMaxAggregateInputType = {
   id?: true
   studentId?: true
   classId?: true
+  status?: true
   enrolledAt?: true
 }
 
@@ -65,6 +70,7 @@ export type EnrollmentCountAggregateInputType = {
   id?: true
   studentId?: true
   classId?: true
+  status?: true
   enrolledAt?: true
   _all?: true
 }
@@ -145,6 +151,7 @@ export type EnrollmentGroupByOutputType = {
   id: string
   studentId: string
   classId: string
+  status: $Enums.EnrollmentStatus
   enrolledAt: Date
   _count: EnrollmentCountAggregateOutputType | null
   _min: EnrollmentMinAggregateOutputType | null
@@ -173,18 +180,24 @@ export type EnrollmentWhereInput = {
   id?: Prisma.StringFilter<"Enrollment"> | string
   studentId?: Prisma.StringFilter<"Enrollment"> | string
   classId?: Prisma.StringFilter<"Enrollment"> | string
+  status?: Prisma.EnumEnrollmentStatusFilter<"Enrollment"> | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFilter<"Enrollment"> | Date | string
-  student?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  student?: Prisma.XOR<Prisma.StudentScalarRelationFilter, Prisma.StudentWhereInput>
   class?: Prisma.XOR<Prisma.ClassScalarRelationFilter, Prisma.ClassWhereInput>
+  attendance?: Prisma.AttendanceListRelationFilter
+  grades?: Prisma.GradeListRelationFilter
 }
 
 export type EnrollmentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   studentId?: Prisma.SortOrder
   classId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   enrolledAt?: Prisma.SortOrder
-  student?: Prisma.UserOrderByWithRelationInput
+  student?: Prisma.StudentOrderByWithRelationInput
   class?: Prisma.ClassOrderByWithRelationInput
+  attendance?: Prisma.AttendanceOrderByRelationAggregateInput
+  grades?: Prisma.GradeOrderByRelationAggregateInput
 }
 
 export type EnrollmentWhereUniqueInput = Prisma.AtLeast<{
@@ -195,15 +208,19 @@ export type EnrollmentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.EnrollmentWhereInput | Prisma.EnrollmentWhereInput[]
   studentId?: Prisma.StringFilter<"Enrollment"> | string
   classId?: Prisma.StringFilter<"Enrollment"> | string
+  status?: Prisma.EnumEnrollmentStatusFilter<"Enrollment"> | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFilter<"Enrollment"> | Date | string
-  student?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  student?: Prisma.XOR<Prisma.StudentScalarRelationFilter, Prisma.StudentWhereInput>
   class?: Prisma.XOR<Prisma.ClassScalarRelationFilter, Prisma.ClassWhereInput>
+  attendance?: Prisma.AttendanceListRelationFilter
+  grades?: Prisma.GradeListRelationFilter
 }, "id" | "studentId_classId">
 
 export type EnrollmentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   studentId?: Prisma.SortOrder
   classId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   enrolledAt?: Prisma.SortOrder
   _count?: Prisma.EnrollmentCountOrderByAggregateInput
   _max?: Prisma.EnrollmentMaxOrderByAggregateInput
@@ -217,46 +234,61 @@ export type EnrollmentScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Enrollment"> | string
   studentId?: Prisma.StringWithAggregatesFilter<"Enrollment"> | string
   classId?: Prisma.StringWithAggregatesFilter<"Enrollment"> | string
+  status?: Prisma.EnumEnrollmentStatusWithAggregatesFilter<"Enrollment"> | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeWithAggregatesFilter<"Enrollment"> | Date | string
 }
 
 export type EnrollmentCreateInput = {
   id?: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
-  student: Prisma.UserCreateNestedOneWithoutEnrollmentsInput
+  student: Prisma.StudentCreateNestedOneWithoutEnrollmentsInput
   class: Prisma.ClassCreateNestedOneWithoutEnrollmentsInput
+  attendance?: Prisma.AttendanceCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentUncheckedCreateInput = {
   id?: string
   studentId: string
   classId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
+  attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeUncheckedCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  student?: Prisma.UserUpdateOneRequiredWithoutEnrollmentsNestedInput
+  student?: Prisma.StudentUpdateOneRequiredWithoutEnrollmentsNestedInput
   class?: Prisma.ClassUpdateOneRequiredWithoutEnrollmentsNestedInput
+  attendance?: Prisma.AttendanceUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   studentId?: Prisma.StringFieldUpdateOperationsInput | string
   classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUncheckedUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentCreateManyInput = {
   id?: string
   studentId: string
   classId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
 }
 
 export type EnrollmentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -264,6 +296,7 @@ export type EnrollmentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   studentId?: Prisma.StringFieldUpdateOperationsInput | string
   classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -286,6 +319,7 @@ export type EnrollmentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   studentId?: Prisma.SortOrder
   classId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   enrolledAt?: Prisma.SortOrder
 }
 
@@ -293,6 +327,7 @@ export type EnrollmentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   studentId?: Prisma.SortOrder
   classId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   enrolledAt?: Prisma.SortOrder
 }
 
@@ -300,7 +335,13 @@ export type EnrollmentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   studentId?: Prisma.SortOrder
   classId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   enrolledAt?: Prisma.SortOrder
+}
+
+export type EnrollmentScalarRelationFilter = {
+  is?: Prisma.EnrollmentWhereInput
+  isNot?: Prisma.EnrollmentWhereInput
 }
 
 export type EnrollmentCreateNestedManyWithoutStudentInput = {
@@ -387,16 +428,54 @@ export type EnrollmentUncheckedUpdateManyWithoutClassNestedInput = {
   deleteMany?: Prisma.EnrollmentScalarWhereInput | Prisma.EnrollmentScalarWhereInput[]
 }
 
+export type EnumEnrollmentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.EnrollmentStatus
+}
+
+export type EnrollmentCreateNestedOneWithoutAttendanceInput = {
+  create?: Prisma.XOR<Prisma.EnrollmentCreateWithoutAttendanceInput, Prisma.EnrollmentUncheckedCreateWithoutAttendanceInput>
+  connectOrCreate?: Prisma.EnrollmentCreateOrConnectWithoutAttendanceInput
+  connect?: Prisma.EnrollmentWhereUniqueInput
+}
+
+export type EnrollmentUpdateOneRequiredWithoutAttendanceNestedInput = {
+  create?: Prisma.XOR<Prisma.EnrollmentCreateWithoutAttendanceInput, Prisma.EnrollmentUncheckedCreateWithoutAttendanceInput>
+  connectOrCreate?: Prisma.EnrollmentCreateOrConnectWithoutAttendanceInput
+  upsert?: Prisma.EnrollmentUpsertWithoutAttendanceInput
+  connect?: Prisma.EnrollmentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EnrollmentUpdateToOneWithWhereWithoutAttendanceInput, Prisma.EnrollmentUpdateWithoutAttendanceInput>, Prisma.EnrollmentUncheckedUpdateWithoutAttendanceInput>
+}
+
+export type EnrollmentCreateNestedOneWithoutGradesInput = {
+  create?: Prisma.XOR<Prisma.EnrollmentCreateWithoutGradesInput, Prisma.EnrollmentUncheckedCreateWithoutGradesInput>
+  connectOrCreate?: Prisma.EnrollmentCreateOrConnectWithoutGradesInput
+  connect?: Prisma.EnrollmentWhereUniqueInput
+}
+
+export type EnrollmentUpdateOneRequiredWithoutGradesNestedInput = {
+  create?: Prisma.XOR<Prisma.EnrollmentCreateWithoutGradesInput, Prisma.EnrollmentUncheckedCreateWithoutGradesInput>
+  connectOrCreate?: Prisma.EnrollmentCreateOrConnectWithoutGradesInput
+  upsert?: Prisma.EnrollmentUpsertWithoutGradesInput
+  connect?: Prisma.EnrollmentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EnrollmentUpdateToOneWithWhereWithoutGradesInput, Prisma.EnrollmentUpdateWithoutGradesInput>, Prisma.EnrollmentUncheckedUpdateWithoutGradesInput>
+}
+
 export type EnrollmentCreateWithoutStudentInput = {
   id?: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
   class: Prisma.ClassCreateNestedOneWithoutEnrollmentsInput
+  attendance?: Prisma.AttendanceCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentUncheckedCreateWithoutStudentInput = {
   id?: string
   classId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
+  attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeUncheckedCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentCreateOrConnectWithoutStudentInput = {
@@ -432,19 +511,26 @@ export type EnrollmentScalarWhereInput = {
   id?: Prisma.StringFilter<"Enrollment"> | string
   studentId?: Prisma.StringFilter<"Enrollment"> | string
   classId?: Prisma.StringFilter<"Enrollment"> | string
+  status?: Prisma.EnumEnrollmentStatusFilter<"Enrollment"> | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFilter<"Enrollment"> | Date | string
 }
 
 export type EnrollmentCreateWithoutClassInput = {
   id?: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
-  student: Prisma.UserCreateNestedOneWithoutEnrollmentsInput
+  student: Prisma.StudentCreateNestedOneWithoutEnrollmentsInput
+  attendance?: Prisma.AttendanceCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentUncheckedCreateWithoutClassInput = {
   id?: string
   studentId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
+  attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutEnrollmentInput
+  grades?: Prisma.GradeUncheckedCreateNestedManyWithoutEnrollmentInput
 }
 
 export type EnrollmentCreateOrConnectWithoutClassInput = {
@@ -473,71 +559,234 @@ export type EnrollmentUpdateManyWithWhereWithoutClassInput = {
   data: Prisma.XOR<Prisma.EnrollmentUpdateManyMutationInput, Prisma.EnrollmentUncheckedUpdateManyWithoutClassInput>
 }
 
+export type EnrollmentCreateWithoutAttendanceInput = {
+  id?: string
+  status?: $Enums.EnrollmentStatus
+  enrolledAt?: Date | string
+  student: Prisma.StudentCreateNestedOneWithoutEnrollmentsInput
+  class: Prisma.ClassCreateNestedOneWithoutEnrollmentsInput
+  grades?: Prisma.GradeCreateNestedManyWithoutEnrollmentInput
+}
+
+export type EnrollmentUncheckedCreateWithoutAttendanceInput = {
+  id?: string
+  studentId: string
+  classId: string
+  status?: $Enums.EnrollmentStatus
+  enrolledAt?: Date | string
+  grades?: Prisma.GradeUncheckedCreateNestedManyWithoutEnrollmentInput
+}
+
+export type EnrollmentCreateOrConnectWithoutAttendanceInput = {
+  where: Prisma.EnrollmentWhereUniqueInput
+  create: Prisma.XOR<Prisma.EnrollmentCreateWithoutAttendanceInput, Prisma.EnrollmentUncheckedCreateWithoutAttendanceInput>
+}
+
+export type EnrollmentUpsertWithoutAttendanceInput = {
+  update: Prisma.XOR<Prisma.EnrollmentUpdateWithoutAttendanceInput, Prisma.EnrollmentUncheckedUpdateWithoutAttendanceInput>
+  create: Prisma.XOR<Prisma.EnrollmentCreateWithoutAttendanceInput, Prisma.EnrollmentUncheckedCreateWithoutAttendanceInput>
+  where?: Prisma.EnrollmentWhereInput
+}
+
+export type EnrollmentUpdateToOneWithWhereWithoutAttendanceInput = {
+  where?: Prisma.EnrollmentWhereInput
+  data: Prisma.XOR<Prisma.EnrollmentUpdateWithoutAttendanceInput, Prisma.EnrollmentUncheckedUpdateWithoutAttendanceInput>
+}
+
+export type EnrollmentUpdateWithoutAttendanceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
+  enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  student?: Prisma.StudentUpdateOneRequiredWithoutEnrollmentsNestedInput
+  class?: Prisma.ClassUpdateOneRequiredWithoutEnrollmentsNestedInput
+  grades?: Prisma.GradeUpdateManyWithoutEnrollmentNestedInput
+}
+
+export type EnrollmentUncheckedUpdateWithoutAttendanceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentId?: Prisma.StringFieldUpdateOperationsInput | string
+  classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
+  enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  grades?: Prisma.GradeUncheckedUpdateManyWithoutEnrollmentNestedInput
+}
+
+export type EnrollmentCreateWithoutGradesInput = {
+  id?: string
+  status?: $Enums.EnrollmentStatus
+  enrolledAt?: Date | string
+  student: Prisma.StudentCreateNestedOneWithoutEnrollmentsInput
+  class: Prisma.ClassCreateNestedOneWithoutEnrollmentsInput
+  attendance?: Prisma.AttendanceCreateNestedManyWithoutEnrollmentInput
+}
+
+export type EnrollmentUncheckedCreateWithoutGradesInput = {
+  id?: string
+  studentId: string
+  classId: string
+  status?: $Enums.EnrollmentStatus
+  enrolledAt?: Date | string
+  attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutEnrollmentInput
+}
+
+export type EnrollmentCreateOrConnectWithoutGradesInput = {
+  where: Prisma.EnrollmentWhereUniqueInput
+  create: Prisma.XOR<Prisma.EnrollmentCreateWithoutGradesInput, Prisma.EnrollmentUncheckedCreateWithoutGradesInput>
+}
+
+export type EnrollmentUpsertWithoutGradesInput = {
+  update: Prisma.XOR<Prisma.EnrollmentUpdateWithoutGradesInput, Prisma.EnrollmentUncheckedUpdateWithoutGradesInput>
+  create: Prisma.XOR<Prisma.EnrollmentCreateWithoutGradesInput, Prisma.EnrollmentUncheckedCreateWithoutGradesInput>
+  where?: Prisma.EnrollmentWhereInput
+}
+
+export type EnrollmentUpdateToOneWithWhereWithoutGradesInput = {
+  where?: Prisma.EnrollmentWhereInput
+  data: Prisma.XOR<Prisma.EnrollmentUpdateWithoutGradesInput, Prisma.EnrollmentUncheckedUpdateWithoutGradesInput>
+}
+
+export type EnrollmentUpdateWithoutGradesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
+  enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  student?: Prisma.StudentUpdateOneRequiredWithoutEnrollmentsNestedInput
+  class?: Prisma.ClassUpdateOneRequiredWithoutEnrollmentsNestedInput
+  attendance?: Prisma.AttendanceUpdateManyWithoutEnrollmentNestedInput
+}
+
+export type EnrollmentUncheckedUpdateWithoutGradesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentId?: Prisma.StringFieldUpdateOperationsInput | string
+  classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
+  enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutEnrollmentNestedInput
+}
+
 export type EnrollmentCreateManyStudentInput = {
   id?: string
   classId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
 }
 
 export type EnrollmentUpdateWithoutStudentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   class?: Prisma.ClassUpdateOneRequiredWithoutEnrollmentsNestedInput
+  attendance?: Prisma.AttendanceUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentUncheckedUpdateWithoutStudentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUncheckedUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentUncheckedUpdateManyWithoutStudentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   classId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type EnrollmentCreateManyClassInput = {
   id?: string
   studentId: string
+  status?: $Enums.EnrollmentStatus
   enrolledAt?: Date | string
 }
 
 export type EnrollmentUpdateWithoutClassInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  student?: Prisma.UserUpdateOneRequiredWithoutEnrollmentsNestedInput
+  student?: Prisma.StudentUpdateOneRequiredWithoutEnrollmentsNestedInput
+  attendance?: Prisma.AttendanceUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentUncheckedUpdateWithoutClassInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   studentId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutEnrollmentNestedInput
+  grades?: Prisma.GradeUncheckedUpdateManyWithoutEnrollmentNestedInput
 }
 
 export type EnrollmentUncheckedUpdateManyWithoutClassInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   studentId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEnrollmentStatusFieldUpdateOperationsInput | $Enums.EnrollmentStatus
   enrolledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type EnrollmentCountOutputType
+ */
+
+export type EnrollmentCountOutputType = {
+  attendance: number
+  grades: number
+}
+
+export type EnrollmentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  attendance?: boolean | EnrollmentCountOutputTypeCountAttendanceArgs
+  grades?: boolean | EnrollmentCountOutputTypeCountGradesArgs
+}
+
+/**
+ * EnrollmentCountOutputType without action
+ */
+export type EnrollmentCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EnrollmentCountOutputType
+   */
+  select?: Prisma.EnrollmentCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * EnrollmentCountOutputType without action
+ */
+export type EnrollmentCountOutputTypeCountAttendanceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AttendanceWhereInput
+}
+
+/**
+ * EnrollmentCountOutputType without action
+ */
+export type EnrollmentCountOutputTypeCountGradesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.GradeWhereInput
+}
 
 
 export type EnrollmentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   studentId?: boolean
   classId?: boolean
+  status?: boolean
   enrolledAt?: boolean
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
+  attendance?: boolean | Prisma.Enrollment$attendanceArgs<ExtArgs>
+  grades?: boolean | Prisma.Enrollment$gradesArgs<ExtArgs>
+  _count?: boolean | Prisma.EnrollmentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["enrollment"]>
 
 export type EnrollmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   studentId?: boolean
   classId?: boolean
+  status?: boolean
   enrolledAt?: boolean
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["enrollment"]>
 
@@ -545,8 +794,9 @@ export type EnrollmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   id?: boolean
   studentId?: boolean
   classId?: boolean
+  status?: boolean
   enrolledAt?: boolean
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["enrollment"]>
 
@@ -554,33 +804,40 @@ export type EnrollmentSelectScalar = {
   id?: boolean
   studentId?: boolean
   classId?: boolean
+  status?: boolean
   enrolledAt?: boolean
 }
 
-export type EnrollmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "studentId" | "classId" | "enrolledAt", ExtArgs["result"]["enrollment"]>
+export type EnrollmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "studentId" | "classId" | "status" | "enrolledAt", ExtArgs["result"]["enrollment"]>
 export type EnrollmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
+  attendance?: boolean | Prisma.Enrollment$attendanceArgs<ExtArgs>
+  grades?: boolean | Prisma.Enrollment$gradesArgs<ExtArgs>
+  _count?: boolean | Prisma.EnrollmentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EnrollmentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
 }
 export type EnrollmentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  student?: boolean | Prisma.StudentDefaultArgs<ExtArgs>
   class?: boolean | Prisma.ClassDefaultArgs<ExtArgs>
 }
 
 export type $EnrollmentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Enrollment"
   objects: {
-    student: Prisma.$UserPayload<ExtArgs>
+    student: Prisma.$StudentPayload<ExtArgs>
     class: Prisma.$ClassPayload<ExtArgs>
+    attendance: Prisma.$AttendancePayload<ExtArgs>[]
+    grades: Prisma.$GradePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     studentId: string
     classId: string
+    status: $Enums.EnrollmentStatus
     enrolledAt: Date
   }, ExtArgs["result"]["enrollment"]>
   composites: {}
@@ -976,8 +1233,10 @@ readonly fields: EnrollmentFieldRefs;
  */
 export interface Prisma__EnrollmentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  student<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  student<T extends Prisma.StudentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StudentDefaultArgs<ExtArgs>>): Prisma.Prisma__StudentClient<runtime.Types.Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   class<T extends Prisma.ClassDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClassDefaultArgs<ExtArgs>>): Prisma.Prisma__ClassClient<runtime.Types.Result.GetResult<Prisma.$ClassPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  attendance<T extends Prisma.Enrollment$attendanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Enrollment$attendanceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  grades<T extends Prisma.Enrollment$gradesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Enrollment$gradesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1010,6 +1269,7 @@ export interface EnrollmentFieldRefs {
   readonly id: Prisma.FieldRef<"Enrollment", 'String'>
   readonly studentId: Prisma.FieldRef<"Enrollment", 'String'>
   readonly classId: Prisma.FieldRef<"Enrollment", 'String'>
+  readonly status: Prisma.FieldRef<"Enrollment", 'EnrollmentStatus'>
   readonly enrolledAt: Prisma.FieldRef<"Enrollment", 'DateTime'>
 }
     
@@ -1409,6 +1669,54 @@ export type EnrollmentDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many Enrollments to delete.
    */
   limit?: number
+}
+
+/**
+ * Enrollment.attendance
+ */
+export type Enrollment$attendanceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Attendance
+   */
+  select?: Prisma.AttendanceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Attendance
+   */
+  omit?: Prisma.AttendanceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AttendanceInclude<ExtArgs> | null
+  where?: Prisma.AttendanceWhereInput
+  orderBy?: Prisma.AttendanceOrderByWithRelationInput | Prisma.AttendanceOrderByWithRelationInput[]
+  cursor?: Prisma.AttendanceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AttendanceScalarFieldEnum | Prisma.AttendanceScalarFieldEnum[]
+}
+
+/**
+ * Enrollment.grades
+ */
+export type Enrollment$gradesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Grade
+   */
+  select?: Prisma.GradeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Grade
+   */
+  omit?: Prisma.GradeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.GradeInclude<ExtArgs> | null
+  where?: Prisma.GradeWhereInput
+  orderBy?: Prisma.GradeOrderByWithRelationInput | Prisma.GradeOrderByWithRelationInput[]
+  cursor?: Prisma.GradeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.GradeScalarFieldEnum | Prisma.GradeScalarFieldEnum[]
 }
 
 /**

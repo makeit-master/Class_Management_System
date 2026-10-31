@@ -10,4 +10,5 @@ export const env = {
   port,
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL || process.env.DIRECT_URL || "",
+  authJwtSecret: process.env.AUTH_JWT_SECRET || "",
 };

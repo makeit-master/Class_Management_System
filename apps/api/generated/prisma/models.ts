@@ -9,6 +9,13 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User.js'
+export type * from './models/Teacher.js'
+export type * from './models/Student.js'
 export type * from './models/Class.js'
 export type * from './models/Enrollment.js'
+export type * from './models/Schedule.js'
+export type * from './models/ClassSession.js'
+export type * from './models/Attendance.js'
+export type * from './models/Assessment.js'
+export type * from './models/Grade.js'
 export type * from './commonInputTypes.js'
