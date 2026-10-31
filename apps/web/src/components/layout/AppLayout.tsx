@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import DashboardPage from "../../features/dashboard/DashboardPage";
 import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
+import TeachersPage from "../../features/teachers/TeachersPage";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -44,6 +45,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <ClassesPage />
           ) : activePage === "Students" ? (
             <StudentsPage />
+          ) : activePage === "Teachers" ? (
+            <TeachersPage />
           ) : (
             children
           )}
