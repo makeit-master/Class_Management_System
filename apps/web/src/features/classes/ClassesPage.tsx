@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import {
   ArrowRight,
   BookOpen,
@@ -8,221 +9,230 @@ import {
   Plus,
   Search,
   Users,
-  X,
   Clock3,
   MapPin,
+  RefreshCw,
 } from "lucide-react";
+
+import { useAuth } from "../../auth/AuthContext";
+
+import {
+  getClasses,
+  type ClassRecord,
+  type ClassListResponse,
+} from "../../classes/class-api";
+
 import "./Classes.css";
 
-type ClassItem = {
-  id: string;
-  name: string;
-  subject: string;
-  teacher: string;
-  students: number;
-  time: string;
-  room: string;
-  day: string;
-  color: "violet" | "blue" | "orange" | "green" | "pink";
-  progress: number;
-};
+type ViewMode = "grid" | "list";
 
-const initialClasses: ClassItem[] = [
-  {
-    id: "1",
-    name: "Math 10A1",
-    subject: "Mathematics",
-    teacher: "Nguyễn Thị Lan",
-    students: 32,
-    time: "08:00 – 09:30",
-    room: "Room 201",
-    day: "Mon, Wed, Fri",
-    color: "violet",
-    progress: 72,
-  },
-  {
-    id: "2",
-    name: "Physics 11B2",
-    subject: "Physics",
-    teacher: "David Mitchell",
-    students: 28,
-    time: "09:45 – 11:15",
-    room: "Lab 102",
-    day: "Mon, Tue, Thu",
-    color: "blue",
-    progress: 64,
-  },
-  {
-    id: "3",
-    name: "English 10A2",
-    subject: "English Language",
-    teacher: "Sarah Johnson",
-    students: 30,
-    time: "13:00 – 14:30",
-    room: "Room 305",
-    day: "Mon, Wed, Fri",
-    color: "orange",
-    progress: 85,
-  },
-  {
-    id: "4",
-    name: "Chemistry 12A1",
-    subject: "Chemistry",
-    teacher: "Trần Văn Minh",
-    students: 26,
-    time: "14:45 – 16:15",
-    room: "Lab 104",
-    day: "Tue, Thu",
-    color: "green",
-    progress: 58,
-  },
-  {
-    id: "5",
-    name: "Biology 11A1",
-    subject: "Biology",
-    teacher: "Emily Parker",
-    students: 31,
-    time: "08:00 – 09:30",
-    room: "Lab 103",
-    day: "Tue, Thu, Fri",
-    color: "pink",
-    progress: 68,
-  },
-  {
-    id: "6",
-    name: "History 12B1",
-    subject: "World History",
-    teacher: "Lê Thanh Hà",
-    students: 29,
-    time: "09:45 – 11:15",
-    room: "Room 204",
-    day: "Mon, Wed",
-    color: "violet",
-    progress: 76,
-  },
-];
+const COLORS = ["violet", "blue", "orange", "green", "pink"] as const;
 
-function initials(name: string) {
+function initials(name: string): string {
   return name
     .trim()
     .split(/\s+/)
+    .filter(Boolean)
     .map((part) => part[0])
     .slice(-2)
     .join("")
     .toUpperCase();
 }
 
+function classColor(id: string) {
+  const hash = Array.from(id).reduce(
+    (value, char) => value + char.charCodeAt(0),
+    0,
+  );
+
+  return COLORS[hash % COLORS.length];
+}
+
+function getTeacherName(item: ClassRecord): string {
+  return item.teacher.user.fullName;
+}
+
+function getGrade(name: string): string | null {
+  return name.match(/\b(10|11|12)\b/)?.[0] ?? null;
+}
+
 export default function ClassesPage() {
-  const [items, setItems] = useState<ClassItem[]>(initialClasses);
+  const { user, token } = useAuth();
+
+  const [classes, setClasses] = useState<ClassRecord[]>([]);
+  const [pagination, setPagination] = useState<ClassListResponse["pagination"]>(
+    {
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+    },
+  );
+
   const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [grade, setGrade] = useState("All grades");
   const [teacher, setTeacher] = useState("All teachers");
-  const [view, setView] = useState<"grid" | "list">("grid");
+
+  const [view, setView] = useState<ViewMode>("grid");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
 
-  const teachers = useMemo(
-    () => [...new Set(items.map((c) => c.teacher))].sort(),
-    [items],
-  );
-  const filtered = useMemo(
-    () =>
-      items.filter((c) => {
-        const matchText = `${c.name} ${c.subject} ${c.teacher}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase());
-        const matchGrade =
-          grade === "All grades" || c.name.match(/\b(10|11|12)/)?.[0] === grade;
-        return (
-          matchText &&
-          matchGrade &&
-          (teacher === "All teachers" || c.teacher === teacher)
-        );
-      }),
-    [items, query, grade, teacher],
-  );
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  function createClass(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const name = String(data.get("name") ?? "").trim();
-    const subject = String(data.get("subject") ?? "").trim();
-    const assignedTeacher = String(data.get("teacher") ?? "").trim();
-    if (!name || !subject || !assignedTeacher) return;
-    if (items.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
-      window.alert("A class with this name already exists.");
+  const isAdmin = user?.role === "ADMIN";
+
+  // Debounce search requests.
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setSearch(query.trim());
+      setPage(1);
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [query]);
+
+  // Fetch actual classes from the API.
+  useEffect(() => {
+    if (!token) {
+      setClasses([]);
+      setLoading(false);
       return;
     }
-    setItems((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        name,
-        subject,
-        teacher: assignedTeacher,
-        students: 0,
-        time: String(data.get("time") || "To be scheduled"),
-        room: String(data.get("room") || "TBA"),
-        day: String(data.get("day") || "TBA"),
-        color: "violet",
-        progress: 0,
-      },
-    ]);
-    setShowCreate(false);
-    setQuery("");
-    setGrade("All grades");
-    setTeacher("All teachers");
+
+    let cancelled = false;
+
+    async function loadClasses() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await getClasses(token!, {
+          page,
+          limit: 20,
+          search,
+        });
+
+        if (cancelled) return;
+
+        setClasses(response.items);
+        setPagination(response.pagination);
+      } catch (caught) {
+        if (cancelled) return;
+
+        setClasses([]);
+        setError(
+          caught instanceof Error ? caught.message : "Unable to load classes.",
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadClasses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, page, search, refreshKey]);
+
+  // Teacher names available on the current page.
+  const teachers = useMemo(
+    () =>
+      [...new Set(classes.map(getTeacherName))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [classes],
+  );
+
+  // Grade and teacher filters apply to the loaded page.
+  const filtered = useMemo(
+    () =>
+      classes.filter((item) => {
+        const matchGrade =
+          grade === "All grades" || getGrade(item.name) === grade;
+
+        const matchTeacher =
+          teacher === "All teachers" || getTeacherName(item) === teacher;
+
+        return matchGrade && matchTeacher;
+      }),
+    [classes, grade, teacher],
+  );
+
+  function retry() {
+    setRefreshKey((previous) => previous + 1);
   }
 
   return (
     <div className="classes-ui">
+      {/* Toolbar */}
       <div className="classes-toolbar">
         <div>
           <h2>
             All classes{" "}
-            <span className="classes-count">{items.length} classes</span>
+            <span className="classes-count">{pagination.total} classes</span>
           </h2>
+
           <p>Manage your classes and keep learning on track.</p>
         </div>
-        <button
-          type="button"
-          className="classes-primary"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus size={17} /> New Class
-        </button>
+
+        {isAdmin && (
+          <button
+            type="button"
+            className="classes-primary"
+            onClick={() =>
+              window.alert("Class creation will be available in M15.5.3.")
+            }
+          >
+            <Plus size={17} />
+            New Class
+          </button>
+        )}
       </div>
 
+      {/* Filters */}
       <div className="classes-filters">
         <label className="classes-search">
           <Search size={17} />
+
           <input
             aria-label="Search classes"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search classes..."
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search classes by name..."
           />
         </label>
+
         <select
           aria-label="Filter by grade"
           value={grade}
-          onChange={(e) => setGrade(e.target.value)}
+          onChange={(event) => setGrade(event.target.value)}
         >
           <option>All grades</option>
           <option value="10">Grade 10</option>
           <option value="11">Grade 11</option>
           <option value="12">Grade 12</option>
         </select>
+
         <select
           aria-label="Filter by teacher"
           value={teacher}
-          onChange={(e) => setTeacher(e.target.value)}
+          onChange={(event) => setTeacher(event.target.value)}
         >
           <option>All teachers</option>
-          {teachers.map((t) => (
-            <option key={t}>{t}</option>
+
+          {teachers.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
           ))}
         </select>
+
         <div className="classes-view-switch" aria-label="Layout mode">
           <button
             type="button"
@@ -233,6 +243,7 @@ export default function ClassesPage() {
           >
             <LayoutGrid size={18} />
           </button>
+
           <button
             type="button"
             aria-label="List view"
@@ -245,154 +256,160 @@ export default function ClassesPage() {
         </div>
       </div>
 
-      <div className={`classes-grid ${view === "list" ? "is-list" : ""}`}>
-        {filtered.map((c) => (
-          <article className="classes-card" key={c.id}>
-            <div className="classes-card-top">
-              <span className={`classes-icon classes-${c.color}`}>
-                <BookOpen size={22} strokeWidth={1.7} />
-              </span>
-              <span className="classes-status">
-                <span /> Active
-              </span>
-            </div>
-            <h3>{c.name}</h3>
-            <p className="classes-subject">{c.subject} · Demo academic year</p>
-            <div className="classes-teacher">
-              <span className={`classes-avatar classes-${c.color}`}>
-                {initials(c.teacher)}
-              </span>
-              <span>
-                <strong>{c.teacher}</strong>
-                <small>Class teacher</small>
-              </span>
-            </div>
-            <div className="classes-metadata">
-              <span>
-                <Users size={15} /> {c.students} students
-              </span>
-              <span>
-                <CalendarDays size={15} /> {c.day}
-              </span>
-            </div>
-            <div className="classes-progress-title">
-              <span>Course progress</span>
-              <b>{c.progress}%</b>
-            </div>
-            <div className="classes-progress">
-              <span
-                className={`classes-fill classes-${c.color}`}
-                style={{ width: `${c.progress}%` }}
-              />
-            </div>
-            {selectedId === c.id && (
-              <div className="classes-detail">
-                <span>
-                  <Clock3 size={15} /> {c.time}
-                </span>
-                <span>
-                  <MapPin size={15} /> {c.room}
-                </span>
-              </div>
-            )}
-            <button
-              type="button"
-              className="classes-details-button"
-              aria-expanded={selectedId === c.id}
-              onClick={() => setSelectedId(selectedId === c.id ? null : c.id)}
-            >
-              {selectedId === c.id
-                ? "Hide class details"
-                : "View class details"}{" "}
-              <ArrowRight size={15} />
-            </button>
-          </article>
-        ))}
-      </div>
-      {!filtered.length && (
-        <div className="classes-empty">
-          <Search size={28} />
-          <h3>No classes found</h3>
-          <p>Try another search or change your filters.</p>
+      {/* Loading */}
+      {loading && (
+        <div className="classes-empty" role="status">
+          <RefreshCw size={28} />
+          <h3>Loading classes...</h3>
+          <p>Fetching your classes from the server.</p>
         </div>
       )}
 
-      {showCreate && (
-        <div
-          className="classes-modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setShowCreate(false);
-          }}
-        >
-          <section
-            className="classes-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-class-heading"
-          >
-            <div className="classes-modal-header">
-              <div>
-                <h2 id="create-class-heading">Create new class</h2>
-                <p>Add a class to your demo workspace.</p>
-              </div>
+      {/* API error */}
+      {!loading && error && (
+        <div className="classes-empty" role="alert">
+          <h3>Unable to load classes</h3>
+          <p>{error}</p>
+
+          <button type="button" className="classes-primary" onClick={retry}>
+            <RefreshCw size={16} />
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Actual class records */}
+      {!loading && !error && (
+        <>
+          <div className={`classes-grid ${view === "list" ? "is-list" : ""}`}>
+            {filtered.map((item) => {
+              const color = classColor(item.id);
+              const teacherName = getTeacherName(item);
+              const expanded = selectedId === item.id;
+
+              return (
+                <article className="classes-card" key={item.id}>
+                  <div className="classes-card-top">
+                    <span className={`classes-icon classes-${color}`}>
+                      <BookOpen size={22} strokeWidth={1.7} />
+                    </span>
+
+                    <span className="classes-status">
+                      <span />
+                      Active
+                    </span>
+                  </div>
+
+                  <h3>{item.name}</h3>
+
+                  <p className="classes-subject">
+                    {item.subject || "Subject not assigned"}
+                  </p>
+
+                  <div className="classes-teacher">
+                    <span className={`classes-avatar classes-${color}`}>
+                      {initials(teacherName)}
+                    </span>
+
+                    <span>
+                      <strong>{teacherName}</strong>
+                      <small>Class teacher</small>
+                    </span>
+                  </div>
+
+                  <div className="classes-metadata">
+                    <span>
+                      <Users size={15} />
+                      {item._count.enrollments} students
+                    </span>
+
+                    <span>
+                      <MapPin size={15} />
+                      {item.room || "Room not assigned"}
+                    </span>
+                  </div>
+
+                  {expanded && (
+                    <div className="classes-detail">
+                      <span>
+                        <Clock3 size={15} />
+                        Schedule not available yet
+                      </span>
+
+                      <span>
+                        <CalendarDays size={15} />
+                        Created {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+
+                      {item.description && <span>{item.description}</span>}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="classes-details-button"
+                    aria-expanded={expanded}
+                    onClick={() => setSelectedId(expanded ? null : item.id)}
+                  >
+                    {expanded ? "Hide class details" : "View class details"}{" "}
+                    <ArrowRight size={15} />
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="classes-empty">
+              <Search size={28} />
+
+              <h3>No classes found</h3>
+
+              <p>
+                {classes.length === 0
+                  ? "There are no active classes matching your search."
+                  : "Try another grade or teacher filter."}
+              </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div
+              className="classes-modal-actions"
+              style={{
+                justifyContent: "center",
+                marginTop: 24,
+              }}
+            >
               <button
                 type="button"
-                aria-label="Close"
-                onClick={() => setShowCreate(false)}
+                disabled={page <= 1}
+                onClick={() => {
+                  setPage((value) => value - 1);
+                  setSelectedId(null);
+                }}
               >
-                <X size={20} />
+                Previous
+              </button>
+
+              <span>
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={page >= pagination.totalPages}
+                onClick={() => {
+                  setPage((value) => value + 1);
+                  setSelectedId(null);
+                }}
+              >
+                Next
               </button>
             </div>
-            <form onSubmit={createClass}>
-              <label>
-                Class name{" "}
-                <input
-                  name="name"
-                  required
-                  maxLength={80}
-                  placeholder="e.g. Math 10A3"
-                />
-              </label>
-              <label>
-                Subject{" "}
-                <input
-                  name="subject"
-                  required
-                  maxLength={80}
-                  placeholder="e.g. Mathematics"
-                />
-              </label>
-              <label>
-                Teacher{" "}
-                <input
-                  name="teacher"
-                  required
-                  maxLength={100}
-                  placeholder="e.g. Nguyễn Thị Lan"
-                />
-              </label>
-              <div className="classes-form-row">
-                <label>
-                  Room <input name="room" placeholder="Room 201" />
-                </label>
-                <label>
-                  Time <input name="time" placeholder="08:00 – 09:30" />
-                </label>
-              </div>
-              <label>
-                Days <input name="day" placeholder="Mon, Wed, Fri" />
-              </label>
-              <div className="classes-modal-actions">
-                <button type="button" onClick={() => setShowCreate(false)}>
-                  Cancel
-                </button>
-                <button className="classes-primary" type="submit">
-                  <Plus size={16} /> Create class
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
