@@ -4,23 +4,25 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
+  Clock3,
   LayoutGrid,
   List,
+  MapPin,
+  Pencil,
   Plus,
+  RefreshCw,
   Search,
   Users,
-  Clock3,
-  MapPin,
-  RefreshCw,
   X,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/AuthContext";
 
 import {
+  createClass,
   getClasses,
   getTeacherOptions,
-  createClass,
+  updateClass,
   type ClassRecord,
   type ClassListResponse,
   type TeacherOption,
@@ -33,6 +35,7 @@ import "./Classes.css";
 // ============================================================
 
 type ViewMode = "grid" | "list";
+type ModalMode = "create" | "edit" | null;
 
 const COLORS = ["violet", "blue", "orange", "green", "pink"] as const;
 
@@ -82,7 +85,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 // ============================================================
-// COMPONENT
+// CLASSES PAGE
 // ============================================================
 
 export default function ClassesPage() {
@@ -91,7 +94,7 @@ export default function ClassesPage() {
   const isAdmin = user?.role === "ADMIN";
 
   // ----------------------------------------------------------
-  // CLASS LIST STATE
+  // CLASS LIST
   // ----------------------------------------------------------
 
   const [classes, setClasses] = useState<ClassRecord[]>([]);
@@ -104,12 +107,11 @@ export default function ClassesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // ----------------------------------------------------------
-  // SEARCH & FILTER STATE
+  // FILTERS & VIEW
   // ----------------------------------------------------------
 
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-
   const [grade, setGrade] = useState("All grades");
   const [teacher, setTeacher] = useState("All teachers");
 
@@ -119,10 +121,12 @@ export default function ClassesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // ----------------------------------------------------------
-  // CREATE CLASS STATE
+  // CREATE / EDIT MODAL
   // ----------------------------------------------------------
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
+
+  const [editingClass, setEditingClass] = useState<ClassRecord | null>(null);
 
   const [teacherOptions, setTeacherOptions] = useState<TeacherOption[]>([]);
 
@@ -132,6 +136,9 @@ export default function ClassesPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const modalOpen = modalMode !== null;
+  const isEditing = modalMode === "edit";
 
   // ==========================================================
   // EFFECT 1: DEBOUNCED SEARCH
@@ -144,13 +151,11 @@ export default function ClassesPage() {
       setSelectedId(null);
     }, 350);
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
+    return () => window.clearTimeout(timeout);
   }, [query]);
 
   // ==========================================================
-  // EFFECT 2: FETCH CLASSES
+  // EFFECT 2: LOAD CLASSES
   // ==========================================================
 
   useEffect(() => {
@@ -199,11 +204,11 @@ export default function ClassesPage() {
   }, [token, page, search, refreshKey]);
 
   // ==========================================================
-  // EFFECT 3: FETCH TEACHERS WHEN CREATE MODAL OPENS
+  // EFFECT 3: LOAD TEACHER OPTIONS FOR CREATE / EDIT
   // ==========================================================
 
   useEffect(() => {
-    if (!showCreate || !token || !isAdmin) {
+    if (!modalOpen || !token || !isAdmin) {
       return;
     }
 
@@ -236,7 +241,7 @@ export default function ClassesPage() {
     return () => {
       cancelled = true;
     };
-  }, [showCreate, token, isAdmin]);
+  }, [modalOpen, token, isAdmin]);
 
   // ==========================================================
   // DERIVED DATA
@@ -268,23 +273,48 @@ export default function ClassesPage() {
     setRefreshKey((previous) => previous + 1);
   }
 
-  function openCreateModal() {
-    if (!isAdmin) return;
-
+  function resetModalState() {
     setFormError("");
     setTeacherError("");
     setTeacherOptions([]);
-    setShowCreate(true);
   }
 
-  function closeCreateModal() {
+  function openCreateModal() {
+    if (!isAdmin) return;
+
+    resetModalState();
+    setEditingClass(null);
+    setModalMode("create");
+  }
+
+  function openEditModal(item: ClassRecord) {
+    if (!isAdmin) return;
+
+    resetModalState();
+    setEditingClass(item);
+    setModalMode("edit");
+  }
+
+  function closeModal() {
     if (submitting) return;
 
-    setShowCreate(false);
-    setFormError("");
+    setModalMode(null);
+    setEditingClass(null);
+    resetModalState();
   }
 
-  async function handleCreateClass(event: FormEvent<HTMLFormElement>) {
+  function refreshClassesAfterSave() {
+    setQuery("");
+    setSearch("");
+    setGrade("All grades");
+    setTeacher("All teachers");
+    setSelectedId(null);
+    setPage(1);
+
+    setRefreshKey((previous) => previous + 1);
+  }
+
+  async function handleSubmitClass(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!token || !isAdmin || submitting) {
@@ -313,7 +343,11 @@ export default function ClassesPage() {
       return;
     }
 
-    if (!teacherOptions.some((option) => option.id === teacherId)) {
+    const validTeacher = teacherOptions.some(
+      (option) => option.id === teacherId,
+    );
+
+    if (!validTeacher) {
       setFormError("Invalid teacher selection.");
       return;
     }
@@ -322,29 +356,35 @@ export default function ClassesPage() {
     setFormError("");
 
     try {
-      await createClass(token, {
+      const payload = {
         name,
         teacherId,
         subject: subject || null,
         room: room || null,
         description: description || null,
-      });
+      };
 
-      // Close modal.
-      setShowCreate(false);
+      if (isEditing) {
+        if (!editingClass) {
+          throw new Error("No class selected for editing.");
+        }
 
-      // Reset filters so new class can be found.
-      setQuery("");
-      setSearch("");
-      setGrade("All grades");
-      setTeacher("All teachers");
-      setSelectedId(null);
-      setPage(1);
+        await updateClass(token, editingClass.id, payload);
+      } else {
+        await createClass(token, payload);
+      }
 
-      // Re-fetch classes from backend.
-      setRefreshKey((previous) => previous + 1);
+      setModalMode(null);
+      setEditingClass(null);
+
+      refreshClassesAfterSave();
     } catch (caught) {
-      setFormError(getErrorMessage(caught, "Unable to create class."));
+      setFormError(
+        getErrorMessage(
+          caught,
+          isEditing ? "Unable to update class." : "Unable to create class.",
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -370,9 +410,7 @@ export default function ClassesPage() {
 
   return (
     <div className="classes-ui">
-      {/* =====================================================
-          TOOLBAR
-      ===================================================== */}
+      {/* TOOLBAR */}
 
       <div className="classes-toolbar">
         <div>
@@ -396,9 +434,7 @@ export default function ClassesPage() {
         )}
       </div>
 
-      {/* =====================================================
-          SEARCH & FILTERS
-      ===================================================== */}
+      {/* FILTERS */}
 
       <div className="classes-filters">
         <label className="classes-search">
@@ -460,28 +496,21 @@ export default function ClassesPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          LOADING STATE
-      ===================================================== */}
+      {/* LOADING */}
 
       {loading && (
         <div className="classes-empty" role="status">
           <RefreshCw size={28} />
-
           <h3>Loading classes...</h3>
-
           <p>Fetching your classes from the server.</p>
         </div>
       )}
 
-      {/* =====================================================
-          ERROR STATE
-      ===================================================== */}
+      {/* ERROR */}
 
       {!loading && error && (
         <div className="classes-empty" role="alert">
           <h3>Unable to load classes</h3>
-
           <p>{error}</p>
 
           <button
@@ -495,9 +524,7 @@ export default function ClassesPage() {
         </div>
       )}
 
-      {/* =====================================================
-          CLASS LIST
-      ===================================================== */}
+      {/* CLASS CARDS */}
 
       {!loading && !error && (
         <>
@@ -509,8 +536,6 @@ export default function ClassesPage() {
 
               return (
                 <article className="classes-card" key={item.id}>
-                  {/* Card header */}
-
                   <div className="classes-card-top">
                     <span className={`classes-icon classes-${color}`}>
                       <BookOpen size={22} strokeWidth={1.7} />
@@ -522,15 +547,11 @@ export default function ClassesPage() {
                     </span>
                   </div>
 
-                  {/* Class information */}
-
                   <h3>{item.name}</h3>
 
                   <p className="classes-subject">
                     {item.subject || "Subject not assigned"}
                   </p>
-
-                  {/* Teacher */}
 
                   <div className="classes-teacher">
                     <span className={`classes-avatar classes-${color}`}>
@@ -542,8 +563,6 @@ export default function ClassesPage() {
                       <small>Class teacher</small>
                     </span>
                   </div>
-
-                  {/* Metadata */}
 
                   <div className="classes-metadata">
                     <span>
@@ -575,28 +594,44 @@ export default function ClassesPage() {
                     </div>
                   )}
 
-                  {/* Detail toggle */}
+                  {/* Class actions */}
 
-                  <button
-                    type="button"
-                    className="classes-details-button"
-                    aria-expanded={expanded}
-                    onClick={() => toggleDetails(item.id)}
-                  >
-                    {expanded ? "Hide class details" : "View class details"}{" "}
-                    <ArrowRight size={15} />
-                  </button>
+                  {/* Class actions */}
+                  <div className="classes-card-actions">
+                    <button
+                      type="button"
+                      className="classes-details-button"
+                      aria-expanded={expanded}
+                      onClick={() => toggleDetails(item.id)}
+                    >
+                      <span>
+                        {expanded ? "Hide class details" : "View class details"}
+                      </span>
+                      <ArrowRight size={16} />
+                    </button>
+
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className="classes-edit-button"
+                        aria-label={`Edit ${item.name}`}
+                        title="Edit class"
+                        onClick={() => openEditModal(item)}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
+                  </div>
                 </article>
               );
             })}
           </div>
 
-          {/* Empty state */}
+          {/* EMPTY STATE */}
 
           {filteredClasses.length === 0 && (
             <div className="classes-empty">
               <Search size={28} />
-
               <h3>No classes found</h3>
 
               <p>
@@ -607,7 +642,7 @@ export default function ClassesPage() {
             </div>
           )}
 
-          {/* Pagination */}
+          {/* PAGINATION */}
 
           {pagination.totalPages > 1 && (
             <div
@@ -642,15 +677,15 @@ export default function ClassesPage() {
       )}
 
       {/* =====================================================
-          CREATE CLASS MODAL
+          SHARED CREATE / EDIT MODAL
       ===================================================== */}
 
-      {showCreate && isAdmin && (
+      {modalOpen && isAdmin && (
         <div
           className="classes-modal-overlay"
           onMouseDown={(event) => {
-            if (!submitting && event.target === event.currentTarget) {
-              closeCreateModal();
+            if (event.target === event.currentTarget) {
+              closeModal();
             }
           }}
         >
@@ -658,36 +693,42 @@ export default function ClassesPage() {
             className="classes-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="create-class-heading"
+            aria-labelledby="class-form-heading"
           >
-            {/* Modal header */}
-
             <div className="classes-modal-header">
               <div>
-                <h2 id="create-class-heading">Create new class</h2>
+                <h2 id="class-form-heading">
+                  {isEditing ? "Edit class" : "Create new class"}
+                </h2>
 
-                <p>Add a new class to ClassFlow.</p>
+                <p>
+                  {isEditing
+                    ? "Update class information."
+                    : "Add a new class to ClassFlow."}
+                </p>
               </div>
 
               <button
                 type="button"
                 aria-label="Close"
                 disabled={submitting}
-                onClick={closeCreateModal}
+                onClick={closeModal}
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Create form */}
-
-            <form onSubmit={handleCreateClass}>
+            <form
+              key={isEditing ? editingClass?.id : "new-class"}
+              onSubmit={handleSubmitClass}
+            >
               <label>
                 Class name
                 <input
                   name="name"
                   required
                   maxLength={120}
+                  defaultValue={editingClass?.name ?? ""}
                   placeholder="e.g. Mathematics 10A3"
                 />
               </label>
@@ -697,6 +738,7 @@ export default function ClassesPage() {
                 <input
                   name="subject"
                   maxLength={120}
+                  defaultValue={editingClass?.subject ?? ""}
                   placeholder="e.g. Mathematics"
                 />
               </label>
@@ -706,7 +748,7 @@ export default function ClassesPage() {
                 <select
                   name="teacherId"
                   required
-                  defaultValue=""
+                  defaultValue={editingClass?.teacherId ?? ""}
                   disabled={loadingTeachers || teacherOptions.length === 0}
                 >
                   <option value="">
@@ -715,30 +757,21 @@ export default function ClassesPage() {
                       : "Select a teacher"}
                   </option>
 
-                  {teacherOptions.map((teacherOption) => (
-                    <option key={teacherOption.id} value={teacherOption.id}>
-                      {teacherOption.fullName}
-                      {teacherOption.employeeCode
-                        ? ` (${teacherOption.employeeCode})`
-                        : ""}
+                  {teacherOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.fullName}
+                      {option.employeeCode ? ` (${option.employeeCode})` : ""}
                     </option>
                   ))}
                 </select>
               </label>
 
-              {/* Teacher fetch error */}
-
               {teacherError && <p role="alert">{teacherError}</p>}
-
-              {/* No available teachers */}
 
               {!loadingTeachers &&
                 !teacherError &&
                 teacherOptions.length === 0 && (
-                  <p>
-                    No teacher profiles available. Create a teacher profile
-                    first.
-                  </p>
+                  <p>No teacher profiles available.</p>
                 )}
 
               <label>
@@ -746,6 +779,7 @@ export default function ClassesPage() {
                 <input
                   name="room"
                   maxLength={100}
+                  defaultValue={editingClass?.room ?? ""}
                   placeholder="e.g. Room 201"
                 />
               </label>
@@ -756,21 +790,18 @@ export default function ClassesPage() {
                   name="description"
                   maxLength={2000}
                   rows={3}
+                  defaultValue={editingClass?.description ?? ""}
                   placeholder="Class description..."
                 />
               </label>
 
-              {/* Form error */}
-
               {formError && <p role="alert">{formError}</p>}
-
-              {/* Modal actions */}
 
               <div className="classes-modal-actions">
                 <button
                   type="button"
                   disabled={submitting}
-                  onClick={closeCreateModal}
+                  onClick={closeModal}
                 >
                   Cancel
                 </button>
@@ -782,9 +813,15 @@ export default function ClassesPage() {
                     submitting || loadingTeachers || teacherOptions.length === 0
                   }
                 >
-                  <Plus size={16} />
+                  {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
 
-                  {submitting ? "Creating..." : "Create class"}
+                  {submitting
+                    ? isEditing
+                      ? "Saving..."
+                      : "Creating..."
+                    : isEditing
+                      ? "Save changes"
+                      : "Create class"}
                 </button>
               </div>
             </form>
