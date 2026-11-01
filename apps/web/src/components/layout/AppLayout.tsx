@@ -9,6 +9,7 @@ import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
 import SettingsPage from "../../features/settings/SettingsPage";
 
+import { canAccessPage } from "../../auth/permissions";
 import { useAuth } from "../../auth/AuthContext";
 
 import Sidebar from "./Sidebar";
@@ -25,6 +26,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuth();
 
   const handleNavigate = (page: string) => {
+    if (!canAccessPage(user, page)) {
+      window.alert("You do not have permission to access this page.");
+      return;
+    }
+
     setActivePage(page);
   };
 
@@ -41,6 +47,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const renderPage = () => {
+    if (!canAccessPage(user, activePage)) {
+      return (
+        <section role="alert" className="dashboard-placeholder">
+          <h2>Access denied</h2>
+          <p>You do not have permission to view this page.</p>
+        </section>
+      );
+    }
+
     switch (activePage) {
       case "Dashboard":
         return (

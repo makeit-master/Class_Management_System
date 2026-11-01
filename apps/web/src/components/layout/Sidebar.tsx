@@ -15,7 +15,9 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
+import { canAccessPage } from "../../auth/permissions";
 import type { AuthUser } from "../../auth/auth-api";
+
 import "./Sidebar.css";
 
 type SidebarProps = {
@@ -59,13 +61,18 @@ export default function Sidebar({
 
   // Authenticated user information
   const userName = user?.fullName?.trim() || "Teacher";
+
   const userInitial = Array.from(userName)[0]?.toUpperCase() || "T";
 
   const userRole = user?.role === "ADMIN" ? "Administrator" : "Teacher";
 
-  const handleLogout = () => {
-    onLogout();
-  };
+  // Filter navigation according to RBAC permissions
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccessPage(user, item.label)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside
@@ -109,9 +116,9 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Role-based navigation */}
       <nav className="sidebar-nav" aria-label="Pages">
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <div className="menu-section" key={group.title}>
             <p className="menu-section-title">
               {collapsed ? "· · ·" : group.title}
@@ -130,6 +137,7 @@ export default function Sidebar({
                 onClick={() => onNavigate(label)}
               >
                 <Icon size={18} aria-hidden="true" />
+
                 <span className="sidebar-label">{label}</span>
               </button>
             ))}
@@ -139,6 +147,7 @@ export default function Sidebar({
 
       {/* Bottom actions */}
       <div className="sidebar-bottom">
+        {/* Theme toggle */}
         <button
           type="button"
           className="sidebar-item"
@@ -153,28 +162,33 @@ export default function Sidebar({
           </span>
         </button>
 
-        <button
-          type="button"
-          className={`sidebar-item ${
-            activePage === "Settings" ? "active" : ""
-          }`}
-          onClick={() => onNavigate("Settings")}
-          title={collapsed ? "Settings" : undefined}
-          aria-label="Settings"
-        >
-          <Settings size={18} />
-          <span className="sidebar-label">Settings</span>
-        </button>
+        {/* Admin-only settings */}
+        {canAccessPage(user, "Settings") && (
+          <button
+            type="button"
+            className={`sidebar-item ${
+              activePage === "Settings" ? "active" : ""
+            }`}
+            onClick={() => onNavigate("Settings")}
+            title={collapsed ? "Settings" : undefined}
+            aria-label="Settings"
+          >
+            <Settings size={18} />
 
-        {/* Functional logout */}
+            <span className="sidebar-label">Settings</span>
+          </button>
+        )}
+
+        {/* Logout available to authenticated users */}
         <button
           type="button"
           className="sidebar-item logout"
-          onClick={handleLogout}
+          onClick={onLogout}
           title={collapsed ? "Logout" : undefined}
           aria-label="Logout"
         >
           <LogOut size={18} />
+
           <span className="sidebar-label">Logout</span>
         </button>
       </div>
