@@ -112,6 +112,51 @@ classRouter.get("/", async (req, res, next) => {
   }
 });
 
+/**
+ * M15.5.3 - Teacher options for class creation
+ * GET /api/classes/teacher-options
+ * Access: ADMIN only
+ */
+classRouter.get(
+  "/teacher-options",
+  requireRole("ADMIN"),
+  async (_req, res, next) => {
+    try {
+      const prisma = getPrisma();
+
+      const teachers = await prisma.teacher.findMany({
+        select: {
+          id: true,
+          employeeCode: true,
+          subject: true,
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+        orderBy: {
+          user: {
+            fullName: "asc",
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: teachers.map((teacher) => ({
+          id: teacher.id,
+          fullName: teacher.user.fullName,
+          employeeCode: teacher.employeeCode,
+          subject: teacher.subject,
+        })),
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 // GET /api/classes/:id
 classRouter.get("/:id", async (req, res, next) => {
   try {

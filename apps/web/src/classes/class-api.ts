@@ -109,3 +109,16 @@ export async function archiveClass(
     },
   );
 }
+
+export type TeacherOption = {
+  id: string;
+  fullName: string;
+  employeeCode: string | null;
+  subject: string | null;
+};
+
+export async function getTeacherOptions(
+  token: string,
+): Promise<TeacherOption[]> {
+  return apiClient<TeacherOption[]>("/classes/teacher-options", { token });
+}
