@@ -1,13 +1,9 @@
-
 import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../lib/prisma.js";
 import { HttpError } from "../utils/http-error.js";
-import {
-  requireAuth,
-  requireRole,
-} from "../middleware/require-auth.js";
+import { requireAuth, requireRole } from "../middleware/require-auth.js";
 
 export const classRouter = Router();
 
@@ -47,6 +43,7 @@ const classSelect = {
       enrollments: true,
     },
   },
+  archivedAt: true,
 } as const;
 
 // GET /api/classes
@@ -60,19 +57,19 @@ classRouter.get("/", async (req, res, next) => {
 
     const currentUser = req.authUser!;
 
-    if (
-      currentUser.role === "TEACHER" &&
-      !currentUser.teacherId
-    ) {
+    if (currentUser.role === "TEACHER" && !currentUser.teacherId) {
       throw new HttpError(403, "Teacher profile required");
     }
 
     const { page, limit, search } = parsed.data;
 
     const where = {
+      archivedAt: null,
+
       ...(currentUser.role === "TEACHER"
         ? { teacherId: currentUser.teacherId! }
         : {}),
+
       ...(search
         ? {
             name: {
@@ -126,16 +123,15 @@ classRouter.get("/:id", async (req, res, next) => {
 
     const currentUser = req.authUser!;
 
-    if (
-      currentUser.role === "TEACHER" &&
-      !currentUser.teacherId
-    ) {
+    if (currentUser.role === "TEACHER" && !currentUser.teacherId) {
       throw new HttpError(403, "Teacher profile required");
     }
 
     const classRecord = await getPrisma().class.findFirst({
       where: {
         id: parsedId.data,
+        archivedAt: null,
+
         ...(currentUser.role === "TEACHER"
           ? { teacherId: currentUser.teacherId! }
           : {}),
@@ -177,70 +173,54 @@ const createClassSchema = z
   })
   .strict();
 
-classRouter.post(
-  "/",
-  requireRole("ADMIN"),
-  async (req, res, next) => {
-    try {
-      // Step 1: Validate request data.
-      const parsed = createClassSchema.safeParse(req.body);
+classRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    // Step 1: Validate request data.
+    const parsed = createClassSchema.safeParse(req.body);
 
-      if (!parsed.success) {
-        throw new HttpError(
-          400,
-          "Invalid class information",
-        );
-      }
-
-      const {
-        name,
-        subject,
-        room,
-        description,
-        teacherId,
-      } = parsed.data;
-
-      const prisma = getPrisma();
-
-      // Step 2: Verify teacher profile exists.
-      const teacher = await prisma.teacher.findUnique({
-        where: {
-          id: teacherId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!teacher) {
-        throw new HttpError(
-          404,
-          "Teacher profile not found",
-        );
-      }
-
-      // Step 3: Create class in PostgreSQL.
-      const createdClass = await prisma.class.create({
-        data: {
-          name,
-          subject: subject ?? null,
-          room: room ?? null,
-          description: description ?? null,
-          teacherId: teacher.id,
-        },
-        select: classSelect,
-      });
-
-      // Step 4: Return the new class.
-      res.status(201).json({
-        success: true,
-        data: createdClass,
-      });
-    } catch (error) {
-      next(error);
+    if (!parsed.success) {
+      throw new HttpError(400, "Invalid class information");
     }
-  },
-);
+
+    const { name, subject, room, description, teacherId } = parsed.data;
+
+    const prisma = getPrisma();
+
+    // Step 2: Verify teacher profile exists.
+    const teacher = await prisma.teacher.findUnique({
+      where: {
+        id: teacherId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!teacher) {
+      throw new HttpError(404, "Teacher profile not found");
+    }
+
+    // Step 3: Create class in PostgreSQL.
+    const createdClass = await prisma.class.create({
+      data: {
+        name,
+        subject: subject ?? null,
+        room: room ?? null,
+        description: description ?? null,
+        teacherId: teacher.id,
+      },
+      select: classSelect,
+    });
+
+    // Step 4: Return the new class.
+    res.status(201).json({
+      success: true,
+      data: createdClass,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * M15.3 - Update Class
@@ -253,121 +233,149 @@ const updateClassSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
 
-    subject: z
-      .string()
-      .trim()
-      .max(120)
-      .nullable()
-      .optional(),
+    subject: z.string().trim().max(120).nullable().optional(),
 
-    room: z
-      .string()
-      .trim()
-      .max(100)
-      .nullable()
-      .optional(),
+    room: z.string().trim().max(100).nullable().optional(),
 
-    description: z
-      .string()
-      .trim()
-      .max(2000)
-      .nullable()
-      .optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
 
     // Must reference Teacher.id, not User.id.
     teacherId: z.uuid().optional(),
   })
   .strict()
-  .refine(
-    (data) =>
-      Object.values(data).some(
-        (value) => value !== undefined,
-      ),
-    {
-      message: "At least one field must be provided",
-    },
-  );
+  .refine((data) => Object.values(data).some((value) => value !== undefined), {
+    message: "At least one field must be provided",
+  });
 
-classRouter.patch(
-  "/:id",
-  requireRole("ADMIN"),
-  async (req, res, next) => {
-    try {
-      // Step 1: Validate class ID.
-      const parsedId = z.uuid().safeParse(req.params.id);
+classRouter.patch("/:id", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    // Step 1: Validate class ID.
+    const parsedId = z.uuid().safeParse(req.params.id);
 
-      if (!parsedId.success) {
-        throw new HttpError(
-          400,
-          "Invalid class ID",
-        );
-      }
+    if (!parsedId.success) {
+      throw new HttpError(400, "Invalid class ID");
+    }
 
-      // Step 2: Validate request body.
-      const parsedBody = updateClassSchema.safeParse(
-        req.body,
-      );
+    // Step 2: Validate request body.
+    const parsedBody = updateClassSchema.safeParse(req.body);
 
-      if (!parsedBody.success) {
-        throw new HttpError(
-          400,
-          "Invalid class update information",
-        );
-      }
+    if (!parsedBody.success) {
+      throw new HttpError(400, "Invalid class update information");
+    }
 
-      const prisma = getPrisma();
-      const classId = parsedId.data;
-      const updateData = parsedBody.data;
+    const prisma = getPrisma();
+    const classId = parsedId.data;
+    const updateData = parsedBody.data;
 
-      // Step 3: Confirm class exists.
-      const existingClass = await prisma.class.findUnique({
+    // Step 3: Confirm class exists.
+    const existingClass = await prisma.class.findUnique({
+      where: {
+        id: classId,
+      },
+      select: {
+        id: true,
+        archivedAt: true,
+      },
+    });
+
+    if (!existingClass) {
+      throw new HttpError(404, "Class not found");
+    }
+
+    if (existingClass.archivedAt !== null) {
+      throw new HttpError(409, "Archived classes cannot be updated");
+    }
+
+    // Step 4: Validate new teacher assignment.
+    if (updateData.teacherId !== undefined) {
+      const teacher = await prisma.teacher.findUnique({
         where: {
-          id: classId,
+          id: updateData.teacherId,
         },
         select: {
           id: true,
         },
       });
 
-      if (!existingClass) {
-        throw new HttpError(
-          404,
-          "Class not found",
-        );
+      if (!teacher) {
+        throw new HttpError(404, "Teacher profile not found");
+      }
+    }
+
+    // Step 5: Update class in PostgreSQL.
+
+    const updateResult = await prisma.class.updateMany({
+      where: {
+        id: classId,
+        archivedAt: null,
+      },
+      data: updateData,
+    });
+
+    if (updateResult.count === 0) {
+      throw new HttpError(409, "Class is no longer available for updating");
+    }
+
+    const updatedClass = await prisma.class.findUniqueOrThrow({
+      where: { id: classId },
+      select: classSelect,
+    });
+
+    // Step 6: Return updated information.
+    res.status(200).json({
+      success: true,
+      data: updatedClass,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * M15.4 - Soft Archive Class
+ * PATCH /api/classes/:id/archive
+ * Access: ADMIN only
+ */
+classRouter.patch(
+  "/:id/archive",
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const parsedId = z.uuid().safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        throw new HttpError(400, "Invalid class ID");
       }
 
-      // Step 4: Validate new teacher assignment.
-      if (updateData.teacherId !== undefined) {
-        const teacher = await prisma.teacher.findUnique({
-          where: {
-            id: updateData.teacherId,
-          },
-          select: {
-            id: true,
-          },
-        });
+      const prisma = getPrisma();
+      const classId = parsedId.data;
 
-        if (!teacher) {
-          throw new HttpError(
-            404,
-            "Teacher profile not found",
-          );
-        }
-      }
+      // Only archive classes that are still active.
+      await prisma.class.updateMany({
+        where: {
+          id: classId,
+          archivedAt: null,
+        },
+        data: {
+          archivedAt: new Date(),
+        },
+      });
 
-      // Step 5: Update class in PostgreSQL.
-      const updatedClass = await prisma.class.update({
+      // Find the class whether newly or previously archived.
+      const archivedClass = await prisma.class.findUnique({
         where: {
           id: classId,
         },
-        data: updateData,
         select: classSelect,
       });
 
-      // Step 6: Return updated information.
+      if (!archivedClass) {
+        throw new HttpError(404, "Class not found");
+      }
+
       res.status(200).json({
         success: true,
-        data: updatedClass,
+        data: archivedClass,
       });
     } catch (error) {
       next(error);

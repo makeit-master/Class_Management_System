@@ -75,14 +75,16 @@ model Student {
 
 // Class managed by a teacher
 model Class {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
   subject     String?
   room        String?
   teacherId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  archivedAt  DateTime?
 
   teacher     Teacher        @relation(fields: [teacherId], references: [id])
   enrollments Enrollment[]
@@ -91,7 +93,9 @@ model Class {
   assessments Assessment[]
 
   @@index([teacherId])
+  @@index([archivedAt])
 }
+
 
 // Many-to-many relationship between Student and Class
 model Enrollment {
