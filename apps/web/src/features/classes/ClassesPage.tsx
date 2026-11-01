@@ -14,11 +14,14 @@ import {
   Search,
   Users,
   X,
+  Archive,
+  AlertTriangle,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/AuthContext";
 
 import {
+  archiveClass,
   createClass,
   getClasses,
   getTeacherOptions,
@@ -139,6 +142,18 @@ export default function ClassesPage() {
 
   const modalOpen = modalMode !== null;
   const isEditing = modalMode === "edit";
+
+  // ==========================================================
+  // ARCHIVE CLASS STATE
+  // ==========================================================
+
+  const [archivingClass, setArchivingClass] = useState<ClassRecord | null>(
+    null,
+  );
+
+  const [archiving, setArchiving] = useState(false);
+
+  const [archiveError, setArchiveError] = useState("");
 
   // ==========================================================
   // EFFECT 1: DEBOUNCED SEARCH
@@ -390,6 +405,53 @@ export default function ClassesPage() {
     }
   }
 
+  function openArchiveModal(item: ClassRecord) {
+    if (!isAdmin || archiving) return;
+
+    setArchiveError("");
+    setArchivingClass(item);
+  }
+
+  function closeArchiveModal() {
+    if (archiving) return;
+
+    setArchivingClass(null);
+    setArchiveError("");
+  }
+
+  async function handleArchiveClass() {
+    if (!token || !isAdmin || !archivingClass || archiving) {
+      return;
+    }
+
+    const classId = archivingClass.id;
+
+    setArchiving(true);
+    setArchiveError("");
+
+    try {
+      await archiveClass(token, classId);
+
+      // Close confirmation dialog.
+      setArchivingClass(null);
+
+      // Reset filters and return to the first page.
+      setQuery("");
+      setSearch("");
+      setGrade("All grades");
+      setTeacher("All teachers");
+      setSelectedId(null);
+      setPage(1);
+
+      // Reload active classes from the backend.
+      setRefreshKey((previous) => previous + 1);
+    } catch (caught) {
+      setArchiveError(getErrorMessage(caught, "Unable to archive this class."));
+    } finally {
+      setArchiving(false);
+    }
+  }
+
   function toggleDetails(classId: string) {
     setSelectedId((current) => (current === classId ? null : classId));
   }
@@ -597,6 +659,8 @@ export default function ClassesPage() {
                   {/* Class actions */}
 
                   {/* Class actions */}
+
+                  {/* Class actions */}
                   <div className="classes-card-actions">
                     <button
                       type="button"
@@ -611,15 +675,27 @@ export default function ClassesPage() {
                     </button>
 
                     {isAdmin && (
-                      <button
-                        type="button"
-                        className="classes-edit-button"
-                        aria-label={`Edit ${item.name}`}
-                        title="Edit class"
-                        onClick={() => openEditModal(item)}
-                      >
-                        <Pencil size={16} />
-                      </button>
+                      <div className="classes-admin-actions">
+                        <button
+                          type="button"
+                          className="classes-edit-button"
+                          aria-label={`Edit ${item.name}`}
+                          title="Edit class"
+                          onClick={() => openEditModal(item)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="classes-archive-button"
+                          aria-label={`Archive ${item.name}`}
+                          title="Archive class"
+                          onClick={() => openArchiveModal(item)}
+                        >
+                          <Archive size={16} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </article>
@@ -825,6 +901,73 @@ export default function ClassesPage() {
                 </button>
               </div>
             </form>
+          </section>
+        </div>
+      )}
+
+      {/* =====================================================
+          ARCHIVE CLASS CONFIRMATION MODAL
+          ===================================================== */}
+
+      {archivingClass && isAdmin && (
+        <div
+          className="classes-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeArchiveModal();
+            }
+          }}
+        >
+          <section
+            className="classes-archive-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="archive-class-heading"
+            aria-describedby="archive-class-description"
+          >
+            <div className="classes-archive-icon">
+              <AlertTriangle size={24} />
+            </div>
+
+            <h2 id="archive-class-heading">Archive this class?</h2>
+
+            <p id="archive-class-description">
+              Are you sure you want to archive{" "}
+              <strong>{archivingClass.name}</strong>?
+            </p>
+
+            <p className="classes-archive-note">
+              This class will no longer appear in the active classes list. Its
+              existing records will remain in the database.
+            </p>
+
+            {archiveError && (
+              <p className="classes-archive-error" role="alert">
+                {archiveError}
+              </p>
+            )}
+
+            <div className="classes-archive-actions">
+              <button
+                type="button"
+                className="classes-archive-cancel"
+                disabled={archiving}
+                onClick={closeArchiveModal}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="classes-archive-confirm"
+                disabled={archiving}
+                onClick={() => void handleArchiveClass()}
+              >
+                <Archive size={16} />
+
+                {archiving ? "Archiving..." : "Archive class"}
+              </button>
+            </div>
           </section>
         </div>
       )}
