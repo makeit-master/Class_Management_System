@@ -21,7 +21,7 @@ const loginSchema = z
   .strict();
 
 // Prevent excessive login attempts.
-const loginLimiter = rateLimit({
+export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: "draft-8",
