@@ -4,7 +4,10 @@ import { z } from "zod";
 
 import { getPrisma } from "../lib/prisma.js";
 import { HttpError } from "../utils/http-error.js";
-import { requireAuth } from "../middleware/require-auth.js";
+import {
+  requireAuth,
+  requireRole,
+} from "../middleware/require-auth.js";
 
 export const classRouter = Router();
 
@@ -152,3 +155,89 @@ classRouter.get("/:id", async (req, res, next) => {
     next(error);
   }
 });
+
+/**
+ * M15.2 - Create Class
+ * POST /api/classes
+ * Access: ADMIN only
+ */
+
+const createClassSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+
+    subject: z.string().trim().max(120).nullable().optional(),
+
+    room: z.string().trim().max(100).nullable().optional(),
+
+    description: z.string().trim().max(2000).nullable().optional(),
+
+    // Must reference Teacher.id, not User.id.
+    teacherId: z.uuid(),
+  })
+  .strict();
+
+classRouter.post(
+  "/",
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      // Step 1: Validate request data.
+      const parsed = createClassSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        throw new HttpError(
+          400,
+          "Invalid class information",
+        );
+      }
+
+      const {
+        name,
+        subject,
+        room,
+        description,
+        teacherId,
+      } = parsed.data;
+
+      const prisma = getPrisma();
+
+      // Step 2: Verify teacher profile exists.
+      const teacher = await prisma.teacher.findUnique({
+        where: {
+          id: teacherId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!teacher) {
+        throw new HttpError(
+          404,
+          "Teacher profile not found",
+        );
+      }
+
+      // Step 3: Create class in PostgreSQL.
+      const createdClass = await prisma.class.create({
+        data: {
+          name,
+          subject: subject ?? null,
+          room: room ?? null,
+          description: description ?? null,
+          teacherId: teacher.id,
+        },
+        select: classSelect,
+      });
+
+      // Step 4: Return the new class.
+      res.status(201).json({
+        success: true,
+        data: createdClass,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
