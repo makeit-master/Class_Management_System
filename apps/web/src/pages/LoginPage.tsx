@@ -7,10 +7,27 @@ import {
   Sun,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../lib/api-client";
 import "./LoginPage.css";
 
+function loginErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return "Incorrect email or password.";
+    if (error.status === 0 || error.code === "NETWORK_ERROR") {
+      return "Cannot connect to the server. Please try again.";
+    }
+    if (error.status >= 500) return "Server error. Please try again later.";
+    if (error.status === 429)
+      return "Too many attempts. Please try again later.";
+    return error.message;
+  }
+  return error instanceof Error
+    ? error.message
+    : "Sign in failed. Please try again.";
+}
+
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionNotice, clearSessionNotice } = useAuth();
   const [light, setLight] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,17 +37,26 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setError("");
     setHelp("");
+    clearSessionNotice();
     setLoading(true);
     try {
       await login(email, password);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Sign in failed");
+      setError(loginErrorMessage(caught));
     } finally {
       setLoading(false);
     }
   }
+
+  const sessionMessage =
+    sessionNotice === "expired"
+      ? "Your session has expired. Please sign in again."
+      : sessionNotice === "unauthorized"
+        ? "Your session is no longer valid. Please sign in again."
+        : null;
 
   return (
     <div className={`cf-login ${light ? "cf-login--light" : ""}`}>
@@ -57,6 +83,12 @@ export default function LoginPage() {
             Welcome back. Let’s make learning flow.
           </p>
 
+          {sessionMessage && (
+            <p className="cf-login__help" role="status">
+              {sessionMessage}
+            </p>
+          )}
+
           <form onSubmit={handleSubmit}>
             <label htmlFor="teacher-email">
               Email address
@@ -66,6 +98,7 @@ export default function LoginPage() {
                 autoComplete="username"
                 placeholder="you@school.edu"
                 required
+                disabled={loading}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
@@ -79,6 +112,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 required
+                disabled={loading}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />

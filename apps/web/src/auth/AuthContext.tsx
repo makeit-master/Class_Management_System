@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -7,37 +8,32 @@ import {
 } from "react";
 
 import { loginRequest, meRequest, type AuthUser } from "./auth-api";
-
 import { setUnauthorizedHandler } from "../lib/api-client";
+
+export type SessionNotice = "expired" | "unauthorized" | null;
 
 type AuthContextType = {
   user: AuthUser | null;
   token: string | null;
+  sessionNotice: SessionNotice;
+  clearSessionNotice: () => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Read expiry from JWT payload.
-// This is only for scheduling frontend logout.
-// The backend remains responsible for JWT verification.
+// Client-side expiry is for UI only. Server must still verify every JWT.
 function getTokenExpiry(token: string): number | null {
   try {
     const payload = token.split(".")[1];
-
-    if (!payload) {
-      return null;
-    }
+    if (!payload) return null;
 
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-
     const decoded = JSON.parse(atob(base64)) as { exp?: unknown };
-
     if (typeof decoded.exp !== "number" || !Number.isFinite(decoded.exp)) {
       return null;
     }
-
     return decoded.exp * 1000;
   } catch {
     return null;
@@ -47,15 +43,19 @@ function getTokenExpiry(token: string): number | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [sessionNotice, setSessionNotice] = useState<SessionNotice>(null);
 
-  function logout() {
+  const endSession = useCallback((reason: SessionNotice) => {
     setToken(null);
     setUser(null);
-  }
+    setSessionNotice(reason);
+  }, []);
+
+  const logout = useCallback(() => endSession(null), [endSession]);
+  const clearSessionNotice = useCallback(() => setSessionNotice(null), []);
 
   async function login(email: string, password: string) {
     const accessToken = await loginRequest(email.trim(), password);
-
     const currentUser = await meRequest(accessToken);
 
     if (currentUser.role !== "TEACHER" && currentUser.role !== "ADMIN") {
@@ -63,17 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const expiresAt = getTokenExpiry(accessToken);
-
     if (expiresAt !== null && expiresAt <= Date.now()) {
       throw new Error("The session has already expired.");
     }
 
+    setSessionNotice(null);
     setToken(accessToken);
     setUser(currentUser);
   }
 
-  // Handle HTTP 401 from requests authenticated with
-  // the current access token.
+  // Only a 401 on the currently authenticated token ends that session.
   useEffect(() => {
     if (!token) {
       setUnauthorizedHandler(null);
@@ -81,53 +80,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUnauthorizedHandler((rejectedToken) => {
-      if (rejectedToken === token) {
-        logout();
-      }
+      if (rejectedToken === token) endSession("unauthorized");
     });
 
-    return () => {
-      setUnauthorizedHandler(null);
-    };
-  }, [token]);
+    return () => setUnauthorizedHandler(null);
+  }, [token, endSession]);
 
-  // Automatically sign out when JWT expires.
+  // Sign out at the exp time. For very long tokens, re-check after each chunk.
   useEffect(() => {
     if (!token) return;
 
     const expiresAt = getTokenExpiry(token);
+    if (expiresAt === null) return;
 
-    if (expiresAt === null) {
-      // No usable exp claim: backend 401 remains the fallback.
-      return;
-    }
-
-    const remaining = expiresAt - Date.now();
-
-    if (remaining <= 0) {
-      logout();
-      return;
-    }
-
-    // Browser timeouts are limited to signed 32-bit milliseconds.
-    const timeout = window.setTimeout(
-      logout,
-      Math.min(remaining, 2_147_483_647),
-    );
-
-    return () => {
-      window.clearTimeout(timeout);
+    let timeout: number | undefined;
+    const checkExpiry = () => {
+      const remaining = expiresAt - Date.now();
+      if (remaining <= 0) {
+        endSession("expired");
+      } else {
+        timeout = window.setTimeout(
+          checkExpiry,
+          Math.min(remaining, 2_147_483_647),
+        );
+      }
     };
-  }, [token]);
+
+    checkExpiry();
+    return () => {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
+  }, [token, endSession]);
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        login,
-        logout,
-      }}
+      value={{ user, token, sessionNotice, clearSessionNotice, login, logout }}
     >
       {children}
     </AuthContext.Provider>
@@ -136,10 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
