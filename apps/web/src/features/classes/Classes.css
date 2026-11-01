@@ -36,7 +36,8 @@
 }
 .classes-ui button,
 .classes-ui input,
-.classes-ui select {
+.classes-ui select,
+.classes-ui textarea {
   font: inherit;
 }
 .classes-ui button {
@@ -368,13 +369,12 @@
 .classes-grid.is-list .classes-progress {
   display: none;
 }
-.classes-grid.is-list .classes-details-button {
+.classes-grid.is-list .classes-card-actions {
   grid-column: 4;
   grid-row: 1 / span 2;
-  width: auto;
-  border: 0;
   margin: 0;
-  padding: 8px;
+  padding: 0;
+  border-top: 0;
 }
 .classes-grid.is-list .classes-detail {
   grid-column: 1/-1;
@@ -401,8 +401,10 @@
 }
 .classes-modal {
   width: min(520px, 100%);
-  max-height: 90vh;
+  max-height: min(90vh, 820px);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border) transparent;
   padding: 26px;
   background: var(--c-surface);
   color: var(--c-text);
@@ -445,7 +447,9 @@
   font-size: 12px;
   font-weight: 600;
 }
-.classes-modal input {
+.classes-modal input,
+.classes-modal select,
+.classes-modal textarea {
   border: 1px solid var(--c-border);
   padding: 11px 12px;
   border-radius: 8px;
@@ -454,7 +458,9 @@
   background: var(--c-elevated);
   width: 100%;
 }
-.classes-modal input:focus {
+.classes-modal input:focus,
+.classes-modal select:focus,
+.classes-modal textarea:focus {
   border-color: var(--c-violet);
 }
 .classes-form-row {
@@ -498,10 +504,6 @@
   .classes-grid.is-list .classes-card .classes-progress {
     display: block;
   }
-  .classes-grid.is-list .classes-details-button {
-    width: calc(100% + 32px);
-    margin: 0 -16px -16px;
-  }
 }
 @media (max-width: 520px) {
   .classes-toolbar {
@@ -519,4 +521,154 @@
   .classes-form-row {
     flex-direction: column;
   }
+}
+
+/* ===================================================
+   M15.5.4 - Card actions (View details / Edit)
+   =================================================== */
+.classes-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px -22px 0;
+  padding: 12px 22px;
+  border-top: 1px solid var(--c-border);
+}
+
+.classes-card-actions .classes-details-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
+  color: var(--c-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.classes-card-actions .classes-details-button span {
+  white-space: nowrap;
+}
+
+.classes-card-actions .classes-details-button svg {
+  flex-shrink: 0;
+}
+
+.classes-card-actions .classes-details-button:hover {
+  color: var(--c-violet);
+}
+
+.classes-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  background: var(--c-elevated);
+  color: var(--c-secondary);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.classes-edit-button:hover {
+  color: var(--c-violet);
+  border-color: var(--c-violet);
+  background: color-mix(in srgb, var(--c-violet) 10%, var(--c-surface));
+}
+
+.classes-edit-button:focus-visible,
+.classes-card-actions .classes-details-button:focus-visible {
+  outline: 2px solid var(--c-violet);
+  outline-offset: 3px;
+}
+
+/* ===================================================
+   M15.5.4 - Modal inputs: inherit Light / Dark theme
+   =================================================== */
+.classes-modal input,
+.classes-modal select,
+.classes-modal textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  outline: none;
+  background: var(--c-elevated);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.classes-modal select {
+  min-height: 43px;
+  cursor: pointer;
+}
+
+.classes-modal select option {
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+
+.classes-modal textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.classes-modal input:focus,
+.classes-modal select:focus,
+.classes-modal textarea:focus {
+  border-color: var(--c-violet);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-violet) 14%, transparent);
+}
+
+.classes-modal input::placeholder,
+.classes-modal textarea::placeholder {
+  color: var(--c-muted);
+}
+
+.classes-modal select:disabled,
+.classes-modal textarea:disabled,
+.classes-modal input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Native dropdown palette follows current app theme. */
+.light-theme .classes-modal select {
+  color-scheme: light;
+}
+.dark-theme .classes-modal select {
+  color-scheme: dark;
+}
+
+.classes-modal::-webkit-scrollbar {
+  width: 6px;
+}
+.classes-modal::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: 999px;
+}
+
+@media (max-width: 780px) {
 }
