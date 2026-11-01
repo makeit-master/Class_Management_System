@@ -241,3 +241,136 @@ classRouter.post(
     }
   },
 );
+
+/**
+ * M15.3 - Update Class
+ * PATCH /api/classes/:id
+ * Access: ADMIN only
+ */
+
+// Validate only the fields being updated.
+const updateClassSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+
+    subject: z
+      .string()
+      .trim()
+      .max(120)
+      .nullable()
+      .optional(),
+
+    room: z
+      .string()
+      .trim()
+      .max(100)
+      .nullable()
+      .optional(),
+
+    description: z
+      .string()
+      .trim()
+      .max(2000)
+      .nullable()
+      .optional(),
+
+    // Must reference Teacher.id, not User.id.
+    teacherId: z.uuid().optional(),
+  })
+  .strict()
+  .refine(
+    (data) =>
+      Object.values(data).some(
+        (value) => value !== undefined,
+      ),
+    {
+      message: "At least one field must be provided",
+    },
+  );
+
+classRouter.patch(
+  "/:id",
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      // Step 1: Validate class ID.
+      const parsedId = z.uuid().safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        throw new HttpError(
+          400,
+          "Invalid class ID",
+        );
+      }
+
+      // Step 2: Validate request body.
+      const parsedBody = updateClassSchema.safeParse(
+        req.body,
+      );
+
+      if (!parsedBody.success) {
+        throw new HttpError(
+          400,
+          "Invalid class update information",
+        );
+      }
+
+      const prisma = getPrisma();
+      const classId = parsedId.data;
+      const updateData = parsedBody.data;
+
+      // Step 3: Confirm class exists.
+      const existingClass = await prisma.class.findUnique({
+        where: {
+          id: classId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!existingClass) {
+        throw new HttpError(
+          404,
+          "Class not found",
+        );
+      }
+
+      // Step 4: Validate new teacher assignment.
+      if (updateData.teacherId !== undefined) {
+        const teacher = await prisma.teacher.findUnique({
+          where: {
+            id: updateData.teacherId,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!teacher) {
+          throw new HttpError(
+            404,
+            "Teacher profile not found",
+          );
+        }
+      }
+
+      // Step 5: Update class in PostgreSQL.
+      const updatedClass = await prisma.class.update({
+        where: {
+          id: classId,
+        },
+        data: updateData,
+        select: classSelect,
+      });
+
+      // Step 6: Return updated information.
+      res.status(200).json({
+        success: true,
+        data: updatedClass,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
