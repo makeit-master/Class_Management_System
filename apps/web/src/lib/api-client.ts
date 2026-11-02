@@ -1,4 +1,3 @@
-
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -30,14 +29,14 @@ type UnauthorizedHandler = (rejectedToken: string) => void;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 
 export function setUnauthorizedHandler(
-  handler: UnauthorizedHandler | null
+  handler: UnauthorizedHandler | null,
 ): void {
   unauthorizedHandler = handler;
 }
 
 export async function apiClient<T>(
   endpoint: string,
-  options: ApiOptions = {}
+  options: ApiOptions = {},
 ): Promise<T> {
   const { token, headers, ...rest } = options;
 
@@ -61,11 +60,7 @@ export async function apiClient<T>(
       headers: requestHeaders,
     });
   } catch {
-    throw new ApiError(
-      0,
-      "NETWORK_ERROR",
-      "Cannot connect to the server."
-    );
+    throw new ApiError(0, "NETWORK_ERROR", "Cannot connect to the server.");
   }
 
   let result: ApiEnvelope<T>;
@@ -80,7 +75,7 @@ export async function apiClient<T>(
     throw new ApiError(
       response.status,
       "INVALID_RESPONSE",
-      "Server returned an invalid response."
+      "Server returned an invalid response.",
     );
   }
 
@@ -92,7 +87,7 @@ export async function apiClient<T>(
     throw new ApiError(
       response.status,
       result.error?.code ?? "REQUEST_ERROR",
-      result.error?.message ?? "Request failed."
+      result.error?.message ?? "Request failed.",
     );
   }
 
@@ -100,7 +95,7 @@ export async function apiClient<T>(
     throw new ApiError(
       response.status,
       "INVALID_RESPONSE",
-      "Server response is missing data."
+      "Server response is missing data.",
     );
   }
 
