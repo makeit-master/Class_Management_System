@@ -40,7 +40,11 @@ const classSelect = {
   },
   _count: {
     select: {
-      enrollments: true,
+      enrollments: {
+        where: {
+          status: "ACTIVE",
+        },
+      },
     },
   },
   archivedAt: true,

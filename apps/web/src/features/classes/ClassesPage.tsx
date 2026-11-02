@@ -30,6 +30,7 @@ import {
   updateClass,
   getArchivedClasses,
   restoreClass,
+  getClassById,
   type ClassRecord,
   type ClassListResponse,
   type TeacherOption,
@@ -546,6 +547,31 @@ export default function ClassesPage() {
     setSelectedId((current) => (current === classId ? null : classId));
   }
 
+  // ============================================================
+  // REFRESH CLASS AFTER ENROLLMENT CHANGES
+  // ============================================================
+
+  async function refreshClassEnrollmentCount(classId: string): Promise<void> {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const updatedClass = await getClassById(token, classId);
+
+      setClasses((currentClasses) =>
+        currentClasses.map((item) =>
+          item.id === classId ? updatedClass : item,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to refresh class enrollment count:", error);
+
+      // Fallback: reload the entire class list.
+      setRefreshKey((previous) => previous + 1);
+    }
+  }
+
   function goToPreviousPage() {
     setPage((current) => Math.max(1, current - 1));
     setSelectedId(null);
@@ -879,6 +905,9 @@ export default function ClassesPage() {
                 key={selectedClass.id}
                 classId={selectedClass.id}
                 token={token}
+                onEnrollmentChanged={() => {
+                  void refreshClassEnrollmentCount(selectedClass.id);
+                }}
               />
             </section>
           )}
