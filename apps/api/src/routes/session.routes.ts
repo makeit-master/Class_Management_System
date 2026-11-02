@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { getPrisma } from "../lib/prisma.js";
-import { requireAuth } from "../middleware/require-auth.js";
+import { requireAuth, requireRole } from "../middleware/require-auth.js";
 
 export const sessionRouter = Router();
 
@@ -217,3 +217,166 @@ sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
+
+const createSessionSchema = z
+  .object({
+    startsAt: z.iso.datetime({ offset: true }),
+    endsAt: z.iso.datetime({ offset: true }),
+    scheduleId: z.uuid().nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      new Date(data.startsAt).getTime() < new Date(data.endsAt).getTime(),
+    {
+      message: "startsAt must be earlier than endsAt.",
+      path: ["endsAt"],
+    },
+  );
+
+// POST /api/classes/:classId/sessions
+sessionRouter.post(
+  "/classes/:classId/sessions",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const classIdResult = z.uuid().safeParse(req.params.classId);
+
+      if (!classIdResult.success) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invalid class ID.",
+          },
+        });
+        return;
+      }
+
+      const bodyResult = createSessionSchema.safeParse(req.body);
+
+      if (!bodyResult.success) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invalid session data.",
+            details: bodyResult.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      const prisma = getPrisma();
+      const classId = classIdResult.data;
+      const { startsAt, endsAt, scheduleId } = bodyResult.data;
+
+      const startDate = new Date(startsAt);
+      const endDate = new Date(endsAt);
+
+      // 1. Check class existence and archive status.
+      const targetClass = await prisma.class.findUnique({
+        where: { id: classId },
+        select: {
+          id: true,
+          archivedAt: true,
+        },
+      });
+
+      if (!targetClass || targetClass.archivedAt !== null) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "CLASS_NOT_FOUND",
+            message: "Class not found.",
+          },
+        });
+        return;
+      }
+
+      // 2. Validate optional schedule ownership.
+      if (scheduleId) {
+        const schedule = await prisma.schedule.findUnique({
+          where: { id: scheduleId },
+          select: { classId: true },
+        });
+
+        if (!schedule || schedule.classId !== classId) {
+          res.status(400).json({
+            success: false,
+            error: {
+              code: "INVALID_SCHEDULE",
+              message: "Schedule does not belong to this class.",
+            },
+          });
+          return;
+        }
+      }
+
+      // 3. Reject overlapping non-cancelled sessions.
+      const overlappingSession = await prisma.classSession.findFirst({
+        where: {
+          classId,
+          status: { not: "CANCELLED" },
+          startsAt: { lt: endDate },
+          endsAt: { gt: startDate },
+        },
+        select: { id: true },
+      });
+
+      if (overlappingSession) {
+        res.status(409).json({
+          success: false,
+          error: {
+            code: "SESSION_CONFLICT",
+            message: "Session time overlaps an existing session.",
+          },
+        });
+        return;
+      }
+
+      // 4. Create a scheduled session.
+      const createdSession = await prisma.classSession.create({
+        data: {
+          classId,
+          scheduleId: scheduleId ?? null,
+          startsAt: startDate,
+          endsAt: endDate,
+          status: "SCHEDULED",
+        },
+        select: {
+          id: true,
+          classId: true,
+          scheduleId: true,
+          startsAt: true,
+          endsAt: true,
+          status: true,
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        data: createdSession,
+      });
+    } catch (error) {
+      // Handle simultaneous requests with the same class/start time.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        res.status(409).json({
+          success: false,
+          error: {
+            code: "SESSION_CONFLICT",
+            message: "A session already exists at this start time.",
+          },
+        });
+        return;
+      }
+
+      next(error);
+    }
+  },
+);
