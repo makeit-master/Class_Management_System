@@ -1,24 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   Mail,
+  Pencil,
+  Plus,
   RefreshCw,
   Search,
   Users,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/AuthContext";
+
 import {
+  createStudent,
   getStudents,
-  type StudentRecord,
+  updateStudent,
+  type CreateStudentInput,
+  type StudentGender,
   type StudentListResponse,
+  type StudentRecord,
+  type UpdateStudentInput,
 } from "./student-api";
 
 import "./Students.css";
 
 // ============================================================
-// CONSTANTS
+// TYPES & CONSTANTS
 // ============================================================
 
 const PAGE_SIZE = 20;
@@ -31,6 +42,34 @@ const INITIAL_PAGINATION: StudentListResponse["pagination"] = {
 };
 
 const AVATAR_COLORS = ["violet", "blue", "green", "orange", "pink"] as const;
+
+type ModalMode = "create" | "edit" | null;
+
+type StudentForm = {
+  studentCode: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: StudentGender | "";
+  parentName: string;
+  parentPhone: string;
+  address: string;
+  notes: string;
+};
+
+const EMPTY_FORM: StudentForm = {
+  studentCode: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  dateOfBirth: "",
+  gender: "",
+  parentName: "",
+  parentPhone: "",
+  address: "",
+  notes: "",
+};
 
 // ============================================================
 // HELPERS
@@ -56,17 +95,32 @@ function studentColor(id: string): string {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Unable to load students.";
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("vi-VN");
 }
 
-// ============================================================
-// STUDENT AVATAR
-// ============================================================
+function optionalText(value: string): string | null {
+  return value.trim() || null;
+}
+
+function toStudentForm(student: StudentRecord): StudentForm {
+  return {
+    studentCode: student.studentCode,
+    fullName: student.fullName,
+    email: student.email ?? "",
+    phone: student.phone ?? "",
+    dateOfBirth: student.dateOfBirth?.slice(0, 10) ?? "",
+    gender: student.gender ?? "",
+    parentName: student.parentName ?? "",
+    parentPhone: student.parentPhone ?? "",
+    address: student.address ?? "",
+    notes: student.notes ?? "",
+  };
+}
 
 function StudentAvatar({ student }: { student: StudentRecord }) {
   return (
@@ -84,10 +138,11 @@ function StudentAvatar({ student }: { student: StudentRecord }) {
 
 export default function StudentsPage() {
   const { user, token } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
-  // ==========================================================
-  // STUDENT LIST STATE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // STUDENT LIST
+  // ----------------------------------------------------------
 
   const [students, setStudents] = useState<StudentRecord[]>([]);
 
@@ -95,20 +150,34 @@ export default function StudentsPage() {
     useState<StudentListResponse["pagination"]>(INITIAL_PAGINATION);
 
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // SEARCH & PAGINATION
-  // ==========================================================
+  // ----------------------------------------------------------
 
   const [query, setQuery] = useState("");
-
   const [search, setSearch] = useState("");
-
   const [page, setPage] = useState(1);
+
+  // ----------------------------------------------------------
+  // CREATE / EDIT MODAL
+  // ----------------------------------------------------------
+
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
+
+  const [editingStudent, setEditingStudent] = useState<StudentRecord | null>(
+    null,
+  );
+
+  const [form, setForm] = useState<StudentForm>({ ...EMPTY_FORM });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const isEditing = modalMode === "edit";
 
   // ==========================================================
   // EFFECT 1: DEBOUNCED SEARCH
@@ -116,9 +185,7 @@ export default function StudentsPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      const nextSearch = query.trim();
-
-      setSearch(nextSearch);
+      setSearch(query.trim());
       setPage(1);
     }, 350);
 
@@ -126,7 +193,7 @@ export default function StudentsPage() {
   }, [query]);
 
   // ==========================================================
-  // EFFECT 2: FETCH REAL STUDENTS
+  // EFFECT 2: LOAD STUDENTS FROM API
   // ==========================================================
 
   useEffect(() => {
@@ -159,7 +226,7 @@ export default function StudentsPage() {
         if (cancelled) return;
 
         setStudents([]);
-        setError(getErrorMessage(caught));
+        setError(getErrorMessage(caught, "Unable to load students."));
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -178,25 +245,129 @@ export default function StudentsPage() {
   // HANDLERS
   // ==========================================================
 
-  function handleSearch(value: string) {
-    setQuery(value);
-    setPage(1);
-  }
-
-  function handleRefresh() {
+  function refreshStudents() {
     setRefreshKey((previous) => previous + 1);
   }
 
-  function previousPage() {
-    setPage((current) => Math.max(1, current - 1));
+  function openCreateModal() {
+    if (!isAdmin) return;
+
+    setEditingStudent(null);
+    setForm({ ...EMPTY_FORM });
+    setFormError("");
+    setModalMode("create");
   }
 
-  function nextPage() {
-    setPage((current) => Math.min(pagination.totalPages, current + 1));
+  function openEditModal(student: StudentRecord) {
+    if (!isAdmin) return;
+
+    setEditingStudent(student);
+    setForm(toStudentForm(student));
+    setFormError("");
+    setModalMode("edit");
+  }
+
+  function closeModal() {
+    if (submitting) return;
+
+    setModalMode(null);
+    setEditingStudent(null);
+    setFormError("");
+  }
+
+  function updateForm<K extends keyof StudentForm>(
+    field: K,
+    value: StudentForm[K],
+  ) {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  }
+
+  function refreshAfterSave() {
+    setQuery("");
+    setSearch("");
+    setPage(1);
+    refreshStudents();
   }
 
   // ==========================================================
-  // DERIVED VALUES
+  // CREATE / UPDATE STUDENT
+  // ==========================================================
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!token || !isAdmin || submitting) return;
+
+    const fullName = form.fullName.trim();
+    const studentCode = form.studentCode.trim();
+
+    if (fullName.length < 2) {
+      setFormError("Student name must contain at least 2 characters.");
+      return;
+    }
+
+    if (!isEditing && !/^STU[0-9]{4,}$/.test(studentCode)) {
+      setFormError("Student code must follow STU0001 format.");
+      return;
+    }
+
+    const sharedInput = {
+      fullName,
+      email: optionalText(form.email),
+      phone: optionalText(form.phone),
+      dateOfBirth: optionalText(form.dateOfBirth),
+      gender: form.gender || null,
+      parentName: optionalText(form.parentName),
+      parentPhone: optionalText(form.parentPhone),
+      address: optionalText(form.address),
+      notes: optionalText(form.notes),
+    };
+
+    setSubmitting(true);
+    setFormError("");
+
+    try {
+      if (isEditing) {
+        if (!editingStudent) {
+          throw new Error("No student selected for editing.");
+        }
+
+        const input: UpdateStudentInput = sharedInput;
+
+        await updateStudent(token, editingStudent.id, input);
+
+        setMessage("Student updated successfully.");
+      } else {
+        const input: CreateStudentInput = {
+          ...sharedInput,
+          studentCode,
+        };
+
+        await createStudent(token, input);
+
+        setMessage("Student created successfully.");
+      }
+
+      setModalMode(null);
+      setEditingStudent(null);
+      refreshAfterSave();
+    } catch (caught) {
+      setFormError(
+        getErrorMessage(
+          caught,
+          isEditing ? "Unable to update student." : "Unable to create student.",
+        ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ==========================================================
+  // PAGINATION
   // ==========================================================
 
   const total = pagination.total;
@@ -213,9 +384,23 @@ export default function StudentsPage() {
 
   return (
     <div className="students-page">
-      {/* =====================================================
-          PAGE HEADER
-          ===================================================== */}
+      {/* SUCCESS MESSAGE */}
+
+      {message && (
+        <div className="students-toast" role="status">
+          <span>{message}</span>
+
+          <button
+            type="button"
+            aria-label="Dismiss message"
+            onClick={() => setMessage("")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* HEADER */}
 
       <div className="students-topbar">
         <div>
@@ -236,22 +421,29 @@ export default function StudentsPage() {
           <button
             type="button"
             className="students-btn"
-            onClick={handleRefresh}
+            onClick={refreshStudents}
             disabled={loading}
           >
             <RefreshCw size={16} />
             Refresh
           </button>
+
+          {isAdmin && (
+            <button
+              type="button"
+              className="students-btn students-btn-primary"
+              onClick={openCreateModal}
+            >
+              <Plus size={17} />
+              Add Student
+            </button>
+          )}
         </div>
       </div>
 
-      {/* =====================================================
-          TABLE PANEL
-          ===================================================== */}
+      {/* TABLE PANEL */}
 
       <div className="students-panel students-table-panel">
-        {/* SEARCH */}
-
         <div className="students-filters">
           <label className="students-search">
             <Search size={17} />
@@ -259,7 +451,10 @@ export default function StudentsPage() {
             <input
               type="search"
               value={query}
-              onChange={(event) => handleSearch(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
               placeholder="Search by name or student code..."
               aria-label="Search students"
             />
@@ -270,27 +465,26 @@ export default function StudentsPage() {
           </span>
         </div>
 
-        {/* LOADING STATE */}
+        {/* LOADING */}
 
         {loading && (
-          <div className="students-empty" role="status" aria-live="polite">
+          <div className="students-empty" role="status">
             <RefreshCw size={24} />
             <p>Loading students from ClassFlow...</p>
           </div>
         )}
 
-        {/* ERROR STATE */}
+        {/* ERROR */}
 
         {!loading && error && (
           <div className="students-empty" role="alert">
             <h3>Unable to load students</h3>
-
             <p>{error}</p>
 
             <button
               type="button"
               className="students-btn"
-              onClick={handleRefresh}
+              onClick={refreshStudents}
             >
               <RefreshCw size={16} />
               Try again
@@ -298,7 +492,7 @@ export default function StudentsPage() {
           </div>
         )}
 
-        {/* REAL STUDENT TABLE */}
+        {/* TABLE */}
 
         {!loading && !error && (
           <>
@@ -312,14 +506,13 @@ export default function StudentsPage() {
                     <th>Active Classes</th>
                     <th>Created</th>
                     <th>Status</th>
+                    {isAdmin && <th>Actions</th>}
                   </tr>
                 </thead>
 
                 <tbody>
                   {students.map((student) => (
                     <tr key={student.id}>
-                      {/* NAME + EMAIL */}
-
                       <td>
                         <div className="students-person">
                           <StudentAvatar student={student} />
@@ -328,23 +521,18 @@ export default function StudentsPage() {
                             <b>{student.fullName}</b>
 
                             <small>
-                              <Mail size={12} /> {student.email || "No email"}
+                              <Mail size={12} />
+                              {student.email || "No email"}
                             </small>
                           </span>
                         </div>
                       </td>
 
-                      {/* STUDENT CODE */}
-
                       <td className="students-muted">{student.studentCode}</td>
-
-                      {/* PHONE */}
 
                       <td className="students-muted">
                         {student.phone || "Not provided"}
                       </td>
-
-                      {/* ACTIVE ENROLLMENTS */}
 
                       <td>
                         <span className="students-class-pill">
@@ -355,13 +543,9 @@ export default function StudentsPage() {
                         </span>
                       </td>
 
-                      {/* DATE CREATED */}
-
                       <td className="students-muted">
                         {formatDate(student.createdAt)}
                       </td>
-
-                      {/* STATUS */}
 
                       <td>
                         <span className="students-status students-status-active">
@@ -369,25 +553,35 @@ export default function StudentsPage() {
                           Active
                         </span>
                       </td>
+
+                      {isAdmin && (
+                        <td>
+                          <button
+                            type="button"
+                            className="students-icon-btn"
+                            aria-label={`Edit ${student.fullName}`}
+                            title="Edit student"
+                            onClick={() => openEditModal(student)}
+                          >
+                            <Pencil size={17} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* EMPTY STATE */}
-
               {students.length === 0 && (
                 <div className="students-empty">
                   <Users size={26} />
-
                   <h3>No students found</h3>
-
                   <p>
                     {search
                       ? "Try another name or student code."
-                      : user?.role === "ADMIN"
+                      : isAdmin
                         ? "No active students have been added yet."
-                        : "No students are currently assigned to your classes."}
+                        : "No students are assigned to your classes."}
                   </p>
                 </div>
               )}
@@ -405,7 +599,7 @@ export default function StudentsPage() {
                   type="button"
                   className="students-btn"
                   disabled={page <= 1}
-                  onClick={previousPage}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
                   <ChevronLeft size={15} />
                   Previous
@@ -419,7 +613,9 @@ export default function StudentsPage() {
                   type="button"
                   className="students-btn"
                   disabled={page >= totalPages}
-                  onClick={nextPage}
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
                 >
                   Next
                   <ChevronRight size={15} />
@@ -429,6 +625,232 @@ export default function StudentsPage() {
           </>
         )}
       </div>
+
+      {/* =====================================================
+          CREATE / EDIT MODAL
+          ===================================================== */}
+
+      {modalMode && isAdmin && (
+        <div
+          className="students-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+        >
+          <section
+            className="students-modal students-student-form-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="students-form-title"
+          >
+            <div className="students-modal-title">
+              <div>
+                <h3 id="students-form-title">
+                  {isEditing ? "Edit student" : "Add new student"}
+                </h3>
+
+                <p>
+                  {isEditing
+                    ? "Update student profile information."
+                    : "Create a new student profile in ClassFlow."}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="students-icon-btn"
+                aria-label="Close dialog"
+                disabled={submitting}
+                onClick={closeModal}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="students-form-grid">
+                <label>
+                  Student Code *
+                  <input
+                    value={form.studentCode}
+                    onChange={(event) =>
+                      updateForm(
+                        "studentCode",
+                        event.target.value.toUpperCase(),
+                      )
+                    }
+                    placeholder="STU0001"
+                    maxLength={30}
+                    required
+                    disabled={isEditing || submitting}
+                  />
+                </label>
+
+                <label>
+                  Full Name *
+                  <input
+                    value={form.fullName}
+                    onChange={(event) =>
+                      updateForm("fullName", event.target.value)
+                    }
+                    placeholder="Student full name"
+                    minLength={2}
+                    maxLength={120}
+                    required
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) =>
+                      updateForm("email", event.target.value)
+                    }
+                    placeholder="student@example.com"
+                    maxLength={255}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label>
+                  Phone
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(event) =>
+                      updateForm("phone", event.target.value)
+                    }
+                    placeholder="Phone number"
+                    maxLength={20}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label>
+                  Date of Birth
+                  <input
+                    type="date"
+                    value={form.dateOfBirth}
+                    onChange={(event) =>
+                      updateForm("dateOfBirth", event.target.value)
+                    }
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label>
+                  Gender
+                  <select
+                    value={form.gender}
+                    onChange={(event) =>
+                      updateForm(
+                        "gender",
+                        event.target.value as StudentForm["gender"],
+                      )
+                    }
+                    disabled={submitting}
+                  >
+                    <option value="">Not specified</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </label>
+
+                <label>
+                  Parent / Guardian Name
+                  <input
+                    value={form.parentName}
+                    onChange={(event) =>
+                      updateForm("parentName", event.target.value)
+                    }
+                    placeholder="Guardian name"
+                    maxLength={120}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label>
+                  Parent / Guardian Phone
+                  <input
+                    type="tel"
+                    value={form.parentPhone}
+                    onChange={(event) =>
+                      updateForm("parentPhone", event.target.value)
+                    }
+                    placeholder="Guardian phone"
+                    maxLength={20}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label className="students-form-full">
+                  Address
+                  <input
+                    value={form.address}
+                    onChange={(event) =>
+                      updateForm("address", event.target.value)
+                    }
+                    placeholder="Student address"
+                    maxLength={500}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label className="students-form-full">
+                  Notes
+                  <textarea
+                    rows={3}
+                    value={form.notes}
+                    onChange={(event) =>
+                      updateForm("notes", event.target.value)
+                    }
+                    placeholder="Additional student information..."
+                    maxLength={2000}
+                    disabled={submitting}
+                  />
+                </label>
+              </div>
+
+              {formError && (
+                <p className="students-form-error" role="alert">
+                  {formError}
+                </p>
+              )}
+
+              <div className="students-modal-actions">
+                <button
+                  type="button"
+                  className="students-btn"
+                  onClick={closeModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="students-btn students-btn-primary"
+                  disabled={submitting}
+                >
+                  {isEditing ? <Pencil size={16} /> : <Check size={16} />}
+
+                  {submitting
+                    ? "Saving..."
+                    : isEditing
+                      ? "Save Changes"
+                      : "Add Student"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -656,3 +656,114 @@
   align-items: center;
   gap: 8px;
 }
+
+/* =============================================
+   M16.3.3 - Student Create / Edit Modal
+   ============================================= */
+
+.students-student-form-modal {
+  width: min(680px, calc(100vw - 32px));
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.students-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.students-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.students-form-full {
+  grid-column: 1 / -1;
+}
+
+.students-form-grid input,
+.students-form-grid select,
+.students-form-grid textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border-color, #373741);
+  border-radius: 8px;
+  background: var(--input-bg, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.students-form-grid input:focus,
+.students-form-grid select:focus,
+.students-form-grid textarea:focus {
+  border-color: #8056e9;
+  box-shadow: 0 0 0 3px rgba(128, 86, 233, 0.12);
+}
+
+.students-form-grid input:disabled,
+.students-form-grid select:disabled,
+.students-form-grid textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.students-form-grid textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+
+.students-form-grid select option {
+  background: #ffffff;
+  color: #171b29;
+}
+
+.dark-theme .students-form-grid select option {
+  background: #1e1e26;
+  color: #f3f3f5;
+}
+
+.students-form-error {
+  margin: 16px 0 0;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dark-theme .students-form-error {
+  color: #fca5a5;
+}
+
+.students-student-form-modal .students-modal-actions {
+  margin-top: 22px;
+}
+
+@media (max-width: 640px) {
+  .students-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .students-student-form-modal {
+    width: calc(100vw - 24px);
+    max-height: 92vh;
+  }
+
+  .students-form-full {
+    grid-column: 1;
+  }
+}
