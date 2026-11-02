@@ -18,6 +18,8 @@ const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().max(100).optional(),
+
+  status: z.enum(["active", "archived"]).default("active"),
 });
 
 const studentIdSchema = z.uuid();
@@ -113,10 +115,17 @@ studentRouter.get("/", async (req, res, next) => {
       throw new HttpError(403, "Teacher profile required");
     }
 
-    const { page, limit, search } = parsed.data;
+    const { page, limit, search, status } = parsed.data;
+
+    if (status === "archived" && currentUser.role !== "ADMIN") {
+      throw new HttpError(
+        403,
+        "Only administrators can view archived students",
+      );
+    }
 
     const where = {
-      archivedAt: null,
+      archivedAt: status === "archived" ? { not: null } : null,
 
       ...(currentUser.role === "TEACHER"
         ? {
