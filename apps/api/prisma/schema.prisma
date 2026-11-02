@@ -31,6 +31,12 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum StudentGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 // Account identity and access
 model User {
   id           String   @id @default(uuid())
@@ -60,18 +66,36 @@ model Teacher {
 }
 
 // Students do not need login accounts in V1
+
 model Student {
-  id          String    @id @default(uuid())
-  studentCode String    @unique
+  id          String         @id @default(uuid())
+  studentCode String         @unique
   fullName    String
   email       String?
   phone       String?
   dateOfBirth DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  gender      StudentGender?
+
+  // Parent / guardian contact
+  parentName  String?
+  parentPhone String?
+
+  // Additional student information
+  address String?
+  notes   String?
+
+  // Soft archive
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   enrollments Enrollment[]
+
+  @@index([fullName])
+  @@index([archivedAt])
 }
+
 
 // Class managed by a teacher
 model Class {
