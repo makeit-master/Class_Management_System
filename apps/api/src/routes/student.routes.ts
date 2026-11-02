@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getPrisma } from "../lib/prisma.js";
 import { HttpError } from "../utils/http-error.js";
-import { requireAuth } from "../middleware/require-auth.js";
+import { requireAuth, requireRole } from "../middleware/require-auth.js";
 
 export const studentRouter = Router();
 
@@ -21,6 +21,30 @@ const listQuerySchema = z.object({
 });
 
 const studentIdSchema = z.uuid();
+
+const createStudentSchema = z
+  .object({
+    studentCode: z
+      .string()
+      .trim()
+      .regex(/^STU[0-9]{4,}$/, "Student code must follow STU0001 format"),
+
+    fullName: z.string().trim().min(2).max(120),
+
+    email: z.email().max(255).nullable().optional(),
+    phone: z.string().trim().max(20).nullable().optional(),
+
+    dateOfBirth: z.iso.date().nullable().optional(),
+
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]).nullable().optional(),
+
+    parentName: z.string().trim().max(120).nullable().optional(),
+    parentPhone: z.string().trim().max(20).nullable().optional(),
+
+    address: z.string().trim().max(500).nullable().optional(),
+    notes: z.string().trim().max(2000).nullable().optional(),
+  })
+  .strict();
 
 // ============================================================
 // SHARED RESPONSE SELECTION
@@ -244,6 +268,65 @@ studentRouter.get("/:id", async (req, res, next) => {
       data: student,
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * M16.2.1 - Create Student
+ *
+ * POST /api/students
+ * Access: ADMIN only
+ */
+studentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    const parsed = createStudentSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      throw new HttpError(400, "Invalid student data");
+    }
+
+    const input = parsed.data;
+
+    const prisma = getPrisma();
+
+    const student = await prisma.student.create({
+      data: {
+        studentCode: input.studentCode,
+        fullName: input.fullName,
+        email: input.email ?? null,
+        phone: input.phone ?? null,
+
+        dateOfBirth: input.dateOfBirth
+          ? new Date(`${input.dateOfBirth}T00:00:00.000Z`)
+          : null,
+
+        gender: input.gender ?? null,
+        parentName: input.parentName ?? null,
+        parentPhone: input.parentPhone ?? null,
+        address: input.address ?? null,
+        notes: input.notes ?? null,
+      },
+
+      select: studentSelect,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: student,
+    });
+  } catch (error) {
+    // Prisma P2002 = unique constraint violation.
+    if (
+      error !== null &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      next(new HttpError(409, "Student code already exists"));
+      return;
+    }
+
     next(error);
   }
 });
