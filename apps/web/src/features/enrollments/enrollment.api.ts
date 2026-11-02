@@ -73,8 +73,8 @@ async function enrollmentRequest<T>(
     );
   }
 
-  if (!response.ok || !body.success) {
-    const error = !body.success ? body.error : null;
+  if (!response.ok || body.success === false) {
+    const error = "error" in body ? body.error : null;
 
     throw new EnrollmentApiError(
       response.status,
