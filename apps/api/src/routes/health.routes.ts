@@ -3,5 +3,7 @@ import { Router } from "express";
 export const healthRouter = Router();
 
 healthRouter.get("/", (_req, res) => {
-  res.status(200).json({ status: "ok", message: "Class Management System API is running" });
+  res
+    .status(200)
+    .json({ status: "ok", message: "Class Management System API is running" });
 });

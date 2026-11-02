@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
@@ -23,15 +22,13 @@ async function main() {
   if (!email || !fullName || !password) {
     throw new Error(
       "Missing BOOTSTRAP_ADMIN_EMAIL, " +
-      "BOOTSTRAP_ADMIN_FULL_NAME, or " +
-      "BOOTSTRAP_ADMIN_PASSWORD."
+        "BOOTSTRAP_ADMIN_FULL_NAME, or " +
+        "BOOTSTRAP_ADMIN_PASSWORD.",
     );
   }
 
   if (password.length < 12) {
-    throw new Error(
-      "Admin password must have at least 12 characters."
-    );
+    throw new Error("Admin password must have at least 12 characters.");
   }
 
   const adapter = new PrismaPg({
@@ -47,8 +44,7 @@ async function main() {
 
     if (existingUser) {
       throw new Error(
-        "A user with this email already exists. " +
-        "No changes were made."
+        "A user with this email already exists. " + "No changes were made.",
       );
     }
 
@@ -79,7 +75,7 @@ async function main() {
 main().catch((error: unknown) => {
   console.error(
     "Failed to create admin:",
-    error instanceof Error ? error.message : error
+    error instanceof Error ? error.message : error,
   );
   process.exitCode = 1;
 });
