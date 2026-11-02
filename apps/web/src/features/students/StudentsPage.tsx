@@ -11,6 +11,12 @@ import {
   Search,
   Users,
   X,
+  ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  MapPin,
+  Phone,
+  UserRound,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/AuthContext";
@@ -19,11 +25,13 @@ import {
   createStudent,
   getStudents,
   updateStudent,
+  getStudentById,
   type CreateStudentInput,
   type StudentGender,
   type StudentListResponse,
   type StudentRecord,
   type UpdateStudentInput,
+  type StudentDetail,
 } from "./student-api";
 
 import "./Students.css";
@@ -132,6 +140,256 @@ function StudentAvatar({ student }: { student: StudentRecord }) {
   );
 }
 
+type StudentDetailViewProps = {
+  student: StudentDetail | null;
+  loading: boolean;
+  error: string;
+  isAdmin: boolean;
+  onBack: () => void;
+  onRetry: () => void;
+  onEdit: (student: StudentRecord) => void;
+};
+
+function StudentDetailView({
+  student,
+  loading,
+  error,
+  isAdmin,
+  onBack,
+  onRetry,
+  onEdit,
+}: StudentDetailViewProps) {
+  return (
+    <div className="student-detail">
+      <button type="button" className="students-back" onClick={onBack}>
+        <ArrowLeft size={17} />
+        Back to students
+      </button>
+
+      {loading && (
+        <div className="students-panel student-detail-message" role="status">
+          <RefreshCw size={24} />
+          <p>Loading student profile...</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="students-panel student-detail-message" role="alert">
+          <h3>Unable to load student profile</h3>
+          <p>{error}</p>
+
+          <button type="button" className="students-btn" onClick={onRetry}>
+            <RefreshCw size={16} />
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && student && (
+        <>
+          {/* PROFILE HEADER */}
+
+          <section className="students-panel student-detail-header">
+            <span
+              className={`students-avatar students-avatar-large students-avatar-${studentColor(student.id)}`}
+            >
+              {initials(student.fullName)}
+            </span>
+
+            <div className="student-detail-identity">
+              <h2>{student.fullName}</h2>
+
+              <p>{student.studentCode}</p>
+
+              <span className="students-status students-status-active">
+                <i />
+                Active
+              </span>
+            </div>
+
+            {isAdmin && (
+              <button
+                type="button"
+                className="students-btn students-btn-primary"
+                onClick={() => onEdit(student)}
+              >
+                <Pencil size={16} />
+                Edit Student
+              </button>
+            )}
+          </section>
+
+          <div className="student-detail-grid">
+            {/* PERSONAL INFORMATION */}
+
+            <section className="students-panel student-detail-section">
+              <h3>
+                <UserRound size={18} />
+                Personal Information
+              </h3>
+
+              <dl className="student-detail-fields">
+                <div>
+                  <dt>Full name</dt>
+                  <dd>{student.fullName}</dd>
+                </div>
+
+                <div>
+                  <dt>Student code</dt>
+                  <dd>{student.studentCode}</dd>
+                </div>
+
+                <div>
+                  <dt>Date of birth</dt>
+                  <dd>
+                    {student.dateOfBirth
+                      ? formatDate(student.dateOfBirth)
+                      : "Not provided"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Gender</dt>
+                  <dd>
+                    {student.gender === "MALE"
+                      ? "Male"
+                      : student.gender === "FEMALE"
+                        ? "Female"
+                        : student.gender === "OTHER"
+                          ? "Other"
+                          : "Not specified"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Email</dt>
+                  <dd>{student.email || "Not provided"}</dd>
+                </div>
+
+                <div>
+                  <dt>Phone</dt>
+                  <dd>{student.phone || "Not provided"}</dd>
+                </div>
+
+                <div className="student-detail-field-full">
+                  <dt>Address</dt>
+                  <dd>{student.address || "Not provided"}</dd>
+                </div>
+              </dl>
+            </section>
+
+            {/* GUARDIAN */}
+
+            <section className="students-panel student-detail-section">
+              <h3>
+                <Phone size={18} />
+                Parent / Guardian
+              </h3>
+
+              <dl className="student-detail-fields">
+                <div>
+                  <dt>Guardian name</dt>
+                  <dd>{student.parentName || "Not provided"}</dd>
+                </div>
+
+                <div>
+                  <dt>Guardian phone</dt>
+                  <dd>{student.parentPhone || "Not provided"}</dd>
+                </div>
+              </dl>
+
+              <div className="student-detail-divider" />
+
+              <h3>
+                <CalendarDays size={18} />
+                Record Information
+              </h3>
+
+              <dl className="student-detail-fields">
+                <div>
+                  <dt>Created</dt>
+                  <dd>{formatDate(student.createdAt)}</dd>
+                </div>
+
+                <div>
+                  <dt>Last updated</dt>
+                  <dd>{formatDate(student.updatedAt)}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+
+          {/* ENROLLMENTS */}
+
+          <section className="students-panel student-detail-section">
+            <div className="student-detail-section-heading">
+              <h3>
+                <BookOpen size={18} />
+                Enrolled Classes
+              </h3>
+
+              <span className="students-count">
+                {student.enrollments.length} classes
+              </span>
+            </div>
+
+            {student.enrollments.length === 0 ? (
+              <div className="student-detail-empty">
+                <BookOpen size={26} />
+                <p>This student is not enrolled in any active class.</p>
+              </div>
+            ) : (
+              <div className="student-detail-class-list">
+                {student.enrollments.map((enrollment) => (
+                  <article className="student-detail-class" key={enrollment.id}>
+                    <div>
+                      <strong>{enrollment.class.name}</strong>
+
+                      <p>
+                        {enrollment.class.subject || "Subject not assigned"}
+                      </p>
+                    </div>
+
+                    <div className="student-detail-class-meta">
+                      <span>
+                        <UserRound size={14} />
+                        {enrollment.class.teacher.user.fullName}
+                      </span>
+
+                      <span>
+                        <MapPin size={14} />
+                        {enrollment.class.room || "Room not assigned"}
+                      </span>
+
+                      <span>
+                        <CalendarDays size={14} />
+                        Enrolled {formatDate(enrollment.enrolledAt)}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* NOTES */}
+
+          <section className="students-panel student-detail-section">
+            <h3>
+              <Pencil size={18} />
+              Student Notes
+            </h3>
+
+            <p className="student-detail-notes">
+              {student.notes || "No notes have been added."}
+            </p>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ============================================================
 // STUDENTS PAGE
 // ============================================================
@@ -178,6 +436,21 @@ export default function StudentsPage() {
   const [message, setMessage] = useState("");
 
   const isEditing = modalMode === "edit";
+
+  // ----------------------------------------------------------
+  // DETAIL
+  // ----------------------------------------------------------
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  const [studentDetail, setStudentDetail] = useState<StudentDetail | null>(
+    null,
+  );
+
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const [detailError, setDetailError] = useState("");
+
+  const [detailRefreshKey, setDetailRefreshKey] = useState(0);
 
   // ==========================================================
   // EFFECT 1: DEBOUNCED SEARCH
@@ -242,6 +515,51 @@ export default function StudentsPage() {
   }, [token, page, search, refreshKey]);
 
   // ==========================================================
+  // EFFECT 3: LOAD STUDENT DETAIL
+  // ==========================================================
+
+  useEffect(() => {
+    if (!detailId || !token) {
+      setStudentDetail(null);
+      setDetailError("");
+      setDetailLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadStudentDetail() {
+      setDetailLoading(true);
+      setDetailError("");
+      setStudentDetail(null);
+
+      try {
+        const result = await getStudentById(token!, detailId!);
+
+        if (cancelled) return;
+
+        setStudentDetail(result);
+      } catch (caught) {
+        if (cancelled) return;
+
+        setDetailError(
+          getErrorMessage(caught, "Unable to load student profile."),
+        );
+      } finally {
+        if (!cancelled) {
+          setDetailLoading(false);
+        }
+      }
+    }
+
+    void loadStudentDetail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, detailId, detailRefreshKey]);
+
+  // ==========================================================
   // HANDLERS
   // ==========================================================
 
@@ -290,6 +608,23 @@ export default function StudentsPage() {
     setSearch("");
     setPage(1);
     refreshStudents();
+    setDetailRefreshKey((previous) => previous + 1);
+  }
+
+  function openStudentDetail(student: StudentRecord) {
+    setStudentDetail(null);
+    setDetailError("");
+    setDetailId(student.id);
+  }
+
+  function closeStudentDetail() {
+    setDetailId(null);
+    setStudentDetail(null);
+    setDetailError("");
+  }
+
+  function retryStudentDetail() {
+    setDetailRefreshKey((previous) => previous + 1);
   }
 
   // ==========================================================
@@ -400,232 +735,254 @@ export default function StudentsPage() {
         </div>
       )}
 
-      {/* HEADER */}
+      {detailId ? (
+        <StudentDetailView
+          student={studentDetail}
+          loading={detailLoading}
+          error={detailError}
+          isAdmin={isAdmin}
+          onBack={closeStudentDetail}
+          onRetry={retryStudentDetail}
+          onEdit={openEditModal}
+        />
+      ) : (
+        <>
+          {/* HEADER */}
 
-      <div className="students-topbar">
-        <div>
-          <div className="students-eyebrow">
-            <Users size={14} />
-            STUDENT MANAGEMENT
-          </div>
+          <div className="students-topbar">
+            <div>
+              <div className="students-eyebrow">
+                <Users size={14} />
+                STUDENT MANAGEMENT
+              </div>
 
-          <h2>
-            All students{" "}
-            <span className="students-count">{total} students</span>
-          </h2>
+              <h2>
+                All students{" "}
+                <span className="students-count">{total} students</span>
+              </h2>
 
-          <p>Manage students and keep learning on track.</p>
-        </div>
+              <p>Manage students and keep learning on track.</p>
+            </div>
 
-        <div className="students-toolbar-actions">
-          <button
-            type="button"
-            className="students-btn"
-            onClick={refreshStudents}
-            disabled={loading}
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </button>
+            <div className="students-toolbar-actions">
+              <button
+                type="button"
+                className="students-btn"
+                onClick={refreshStudents}
+                disabled={loading}
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </button>
 
-          {isAdmin && (
-            <button
-              type="button"
-              className="students-btn students-btn-primary"
-              onClick={openCreateModal}
-            >
-              <Plus size={17} />
-              Add Student
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* TABLE PANEL */}
-
-      <div className="students-panel students-table-panel">
-        <div className="students-filters">
-          <label className="students-search">
-            <Search size={17} />
-
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by name or student code..."
-              aria-label="Search students"
-            />
-          </label>
-
-          <span className="students-results">
-            {loading ? "Loading..." : `${total} results`}
-          </span>
-        </div>
-
-        {/* LOADING */}
-
-        {loading && (
-          <div className="students-empty" role="status">
-            <RefreshCw size={24} />
-            <p>Loading students from ClassFlow...</p>
-          </div>
-        )}
-
-        {/* ERROR */}
-
-        {!loading && error && (
-          <div className="students-empty" role="alert">
-            <h3>Unable to load students</h3>
-            <p>{error}</p>
-
-            <button
-              type="button"
-              className="students-btn"
-              onClick={refreshStudents}
-            >
-              <RefreshCw size={16} />
-              Try again
-            </button>
-          </div>
-        )}
-
-        {/* TABLE */}
-
-        {!loading && !error && (
-          <>
-            <div className="students-table-scroll">
-              <table className="students-table">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Student Code</th>
-                    <th>Phone</th>
-                    <th>Active Classes</th>
-                    <th>Created</th>
-                    <th>Status</th>
-                    {isAdmin && <th>Actions</th>}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id}>
-                      <td>
-                        <div className="students-person">
-                          <StudentAvatar student={student} />
-
-                          <span>
-                            <b>{student.fullName}</b>
-
-                            <small>
-                              <Mail size={12} />
-                              {student.email || "No email"}
-                            </small>
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="students-muted">{student.studentCode}</td>
-
-                      <td className="students-muted">
-                        {student.phone || "Not provided"}
-                      </td>
-
-                      <td>
-                        <span className="students-class-pill">
-                          {student._count.enrollments}{" "}
-                          {student._count.enrollments === 1
-                            ? "class"
-                            : "classes"}
-                        </span>
-                      </td>
-
-                      <td className="students-muted">
-                        {formatDate(student.createdAt)}
-                      </td>
-
-                      <td>
-                        <span className="students-status students-status-active">
-                          <i />
-                          Active
-                        </span>
-                      </td>
-
-                      {isAdmin && (
-                        <td>
-                          <button
-                            type="button"
-                            className="students-icon-btn"
-                            aria-label={`Edit ${student.fullName}`}
-                            title="Edit student"
-                            onClick={() => openEditModal(student)}
-                          >
-                            <Pencil size={17} />
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {students.length === 0 && (
-                <div className="students-empty">
-                  <Users size={26} />
-                  <h3>No students found</h3>
-                  <p>
-                    {search
-                      ? "Try another name or student code."
-                      : isAdmin
-                        ? "No active students have been added yet."
-                        : "No students are assigned to your classes."}
-                  </p>
-                </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="students-btn students-btn-primary"
+                  onClick={openCreateModal}
+                >
+                  <Plus size={17} />
+                  Add Student
+                </button>
               )}
             </div>
+          </div>
 
-            {/* PAGINATION */}
+          {/* TABLE PANEL */}
 
-            <div className="students-pagination">
-              <span>
-                Showing {firstItem}–{lastItem} of {total} students
+          <div className="students-panel students-table-panel">
+            <div className="students-filters">
+              <label className="students-search">
+                <Search size={17} />
+
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search by name or student code..."
+                  aria-label="Search students"
+                />
+              </label>
+
+              <span className="students-results">
+                {loading ? "Loading..." : `${total} results`}
               </span>
+            </div>
 
-              <div>
+            {/* LOADING */}
+
+            {loading && (
+              <div className="students-empty" role="status">
+                <RefreshCw size={24} />
+                <p>Loading students from ClassFlow...</p>
+              </div>
+            )}
+
+            {/* ERROR */}
+
+            {!loading && error && (
+              <div className="students-empty" role="alert">
+                <h3>Unable to load students</h3>
+                <p>{error}</p>
+
                 <button
                   type="button"
                   className="students-btn"
-                  disabled={page <= 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  onClick={refreshStudents}
                 >
-                  <ChevronLeft size={15} />
-                  Previous
-                </button>
-
-                <span className="students-page-number">
-                  {page} / {totalPages}
-                </span>
-
-                <button
-                  type="button"
-                  className="students-btn"
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((current) => Math.min(totalPages, current + 1))
-                  }
-                >
-                  Next
-                  <ChevronRight size={15} />
+                  <RefreshCw size={16} />
+                  Try again
                 </button>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            )}
 
+            {/* TABLE */}
+
+            {!loading && !error && (
+              <>
+                <div className="students-table-scroll">
+                  <table className="students-table">
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Student Code</th>
+                        <th>Phone</th>
+                        <th>Active Classes</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        {isAdmin && <th>Actions</th>}
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {students.map((student) => (
+                        <tr key={student.id}>
+                          <td>
+                            <button
+                              type="button"
+                              className="students-person students-person-link"
+                              onClick={() => openStudentDetail(student)}
+                              aria-label={`View profile of ${student.fullName}`}
+                            >
+                              <StudentAvatar student={student} />
+
+                              <span>
+                                <b>{student.fullName}</b>
+
+                                <small>
+                                  <Mail size={12} />
+                                  {student.email || "No email"}
+                                </small>
+                              </span>
+                            </button>
+                          </td>
+
+                          <td className="students-muted">
+                            {student.studentCode}
+                          </td>
+
+                          <td className="students-muted">
+                            {student.phone || "Not provided"}
+                          </td>
+
+                          <td>
+                            <span className="students-class-pill">
+                              {student._count.enrollments}{" "}
+                              {student._count.enrollments === 1
+                                ? "class"
+                                : "classes"}
+                            </span>
+                          </td>
+
+                          <td className="students-muted">
+                            {formatDate(student.createdAt)}
+                          </td>
+
+                          <td>
+                            <span className="students-status students-status-active">
+                              <i />
+                              Active
+                            </span>
+                          </td>
+
+                          {isAdmin && (
+                            <td>
+                              <button
+                                type="button"
+                                className="students-icon-btn"
+                                aria-label={`Edit ${student.fullName}`}
+                                title="Edit student"
+                                onClick={() => openEditModal(student)}
+                              >
+                                <Pencil size={17} />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {students.length === 0 && (
+                    <div className="students-empty">
+                      <Users size={26} />
+                      <h3>No students found</h3>
+                      <p>
+                        {search
+                          ? "Try another name or student code."
+                          : isAdmin
+                            ? "No active students have been added yet."
+                            : "No students are assigned to your classes."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* PAGINATION */}
+
+                <div className="students-pagination">
+                  <span>
+                    Showing {firstItem}–{lastItem} of {total} students
+                  </span>
+
+                  <div>
+                    <button
+                      type="button"
+                      className="students-btn"
+                      disabled={page <= 1}
+                      onClick={() =>
+                        setPage((current) => Math.max(1, current - 1))
+                      }
+                    >
+                      <ChevronLeft size={15} />
+                      Previous
+                    </button>
+
+                    <span className="students-page-number">
+                      {page} / {totalPages}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="students-btn"
+                      disabled={page >= totalPages}
+                      onClick={() =>
+                        setPage((current) => Math.min(totalPages, current + 1))
+                      }
+                    >
+                      Next
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
       {/* =====================================================
           CREATE / EDIT MODAL
           ===================================================== */}

@@ -22,6 +22,27 @@ export type StudentRecord = {
   };
 };
 
+export type StudentEnrollment = {
+  id: string;
+  status: "ACTIVE" | "DROPPED";
+  enrolledAt: string;
+  class: {
+    id: string;
+    name: string;
+    subject: string | null;
+    room: string | null;
+    teacher: {
+      user: {
+        fullName: string;
+      };
+    };
+  };
+};
+
+export type StudentDetail = StudentRecord & {
+  enrollments: StudentEnrollment[];
+};
+
 export type StudentListResponse = {
   items: StudentRecord[];
   pagination: {
@@ -74,8 +95,8 @@ export function getStudents(
 export function getStudentById(
   token: string,
   studentId: string,
-): Promise<StudentRecord> {
-  return apiClient<StudentRecord>(
+): Promise<StudentDetail> {
+  return apiClient<StudentDetail>(
     `/students/${encodeURIComponent(studentId)}`,
     { token },
   );
