@@ -2,9 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EnrollmentApiError, getEnrollments } from "./enrollment.api";
 
-import type { EnrollmentListData, EnrollmentStatus } from "./enrollment.types";
+import EnrollStudentModal from "./EnrollmentStudentModal";
+
+import type {
+  CreateEnrollmentData,
+  EnrollmentListData,
+  EnrollmentStatus,
+} from "./enrollment.types";
 
 import "./ClassEnrollmentList.css";
+import { useAuth } from "../../auth/AuthContext";
 
 interface ClassEnrollmentListProps {
   classId: string;
@@ -63,6 +70,13 @@ export default function ClassEnrollmentList({
   classId,
   token,
 }: ClassEnrollmentListProps) {
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "ADMIN";
+
+  const [enrollModalOpen, setEnrollModalOpen] = useState(false);
+
+  const [successMessage, setSuccessMessage] = useState("");
   // ==========================================================
   // STATE
   // ==========================================================
@@ -178,6 +192,24 @@ export default function ClassEnrollmentList({
     setRefreshKey((previous) => previous + 1);
   }
 
+  function handleEnrollSuccess(result: CreateEnrollmentData): void {
+    setEnrollModalOpen(false);
+
+    setSuccessMessage(
+      result.reactivated
+        ? "Student re-enrolled successfully."
+        : "Student enrolled successfully.",
+    );
+
+    // Always return to the Active tab.
+    setStatus("ACTIVE");
+    setPage(1);
+    setSearch("");
+
+    // Refetch the list even if the tab and page
+    // were already ACTIVE / 1.
+    setRefreshKey((previous) => previous + 1);
+  }
   function handlePreviousPage(): void {
     setPage((previous) => Math.max(1, previous - 1));
   }
@@ -215,15 +247,36 @@ export default function ClassEnrollmentList({
           <p>Manage active and dropped enrollments for this class.</p>
         </div>
 
-        <button
-          type="button"
-          className="cms-enrollment-refresh"
-          onClick={handleRefresh}
-          disabled={loading || !token || !classId}
-        >
-          Refresh
-        </button>
+        <div className="cms-enrollment-header-actions">
+          <button
+            type="button"
+            className="cms-enrollment-refresh"
+            onClick={handleRefresh}
+            disabled={loading || !token || !classId}
+          >
+            Refresh
+          </button>
+
+          {isAdmin && (
+            <button
+              type="button"
+              className="cms-enrollment-add"
+              onClick={() => {
+                setSuccessMessage("");
+                setEnrollModalOpen(true);
+              }}
+              disabled={!token || !classId}
+            >
+              + Enroll Student
+            </button>
+          )}
+        </div>
       </div>
+      {successMessage && (
+        <div className="cms-enrollment-success" role="status">
+          {successMessage}
+        </div>
+      )}
 
       {/* ===================================================
           STATUS TABS
@@ -429,6 +482,15 @@ export default function ClassEnrollmentList({
             </div>
           </div>
         </>
+      )}
+      {isAdmin && enrollModalOpen && (
+        <EnrollStudentModal
+          classId={classId}
+          className={data?.class.name ?? "this class"}
+          token={token}
+          onClose={() => setEnrollModalOpen(false)}
+          onEnrolled={handleEnrollSuccess}
+        />
       )}
     </section>
   );

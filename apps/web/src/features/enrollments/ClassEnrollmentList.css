@@ -292,3 +292,55 @@
   background: #3b1c25;
   color: #fecdd3;
 }
+
+/* ============================================================
+   M17.4.3 - ENROLL ACTIONS
+============================================================ */
+
+.cms-enrollment-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cms-enrollment-add {
+  padding: 9px 15px;
+  border: 1px solid var(--c-violet);
+  border-radius: 8px;
+  background: var(--c-violet);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cms-enrollment-add:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.cms-enrollment-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cms-enrollment-success {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid var(--c-green);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--c-green) 10%, var(--c-surface));
+  color: var(--c-green);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .cms-enrollment-header-actions {
+    width: 100%;
+  }
+
+  .cms-enrollment-header-actions button {
+    flex: 1;
+  }
+}
