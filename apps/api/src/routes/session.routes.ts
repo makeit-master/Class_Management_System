@@ -1,60 +1,126 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { z } from "zod";
+
 import { getPrisma } from "../lib/prisma.js";
 import { requireAuth, requireRole } from "../middleware/require-auth.js";
 
 export const sessionRouter = Router();
 
+// ============================================================
+// SHARED HELPERS
+// ============================================================
+
 const uuidSchema = z.uuid();
+
+function sendError(
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+  details?: unknown,
+): void {
+  res.status(status).json({
+    success: false,
+    error: {
+      code,
+      message,
+      ...(details !== undefined ? { details } : {}),
+    },
+  });
+}
+
+// ============================================================
+// VALIDATION SCHEMAS
+// ============================================================
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+
   status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]).optional(),
-  from: z.string().datetime({ offset: true }).optional(),
-  to: z.string().datetime({ offset: true }).optional(),
+
+  from: z.iso.datetime({ offset: true }).optional(),
+  to: z.iso.datetime({ offset: true }).optional(),
 });
 
+const createSessionSchema = z
+  .object({
+    startsAt: z.iso.datetime({ offset: true }),
+    endsAt: z.iso.datetime({ offset: true }),
+    scheduleId: z.uuid().nullable().optional(),
+  })
+  .strict()
+  .refine(
+    (data) =>
+      new Date(data.startsAt).getTime() < new Date(data.endsAt).getTime(),
+    {
+      message: "startsAt must be earlier than endsAt.",
+      path: ["endsAt"],
+    },
+  );
+
+const updateSessionSchema = z
+  .object({
+    startsAt: z.iso.datetime({ offset: true }).optional(),
+    endsAt: z.iso.datetime({ offset: true }).optional(),
+    scheduleId: z.uuid().nullable().optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required.",
+  });
+
+// ============================================================
 // GET /api/classes/:classId/sessions
+// List sessions belonging to a class.
+// ADMIN: all classes.
+// TEACHER: assigned classes only.
+// ============================================================
+
 sessionRouter.get(
   "/classes/:classId/sessions",
   requireAuth,
   async (req, res, next) => {
     try {
-      const prisma = getPrisma();
-
       const idResult = uuidSchema.safeParse(req.params.classId);
 
       if (!idResult.success) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid class ID.",
-        });
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid class ID.");
         return;
       }
 
       const queryResult = listQuerySchema.safeParse(req.query);
 
       if (!queryResult.success) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid session query parameters.",
-        });
+        sendError(
+          res,
+          400,
+          "VALIDATION_ERROR",
+          "Invalid session query parameters.",
+          z.flattenError(queryResult.error),
+        );
         return;
       }
 
       const { page, limit, status, from, to } = queryResult.data;
 
-      if (from && to && new Date(from) > new Date(to)) {
-        res.status(400).json({
-          success: false,
-          message: "from must be earlier than or equal to to.",
-        });
+      if (from && to && new Date(from).getTime() > new Date(to).getTime()) {
+        sendError(
+          res,
+          400,
+          "INVALID_TIME_RANGE",
+          "from must be earlier than or equal to to.",
+        );
         return;
       }
 
+      const prisma = getPrisma();
+      const currentUser = req.authUser!;
+
       const targetClass = await prisma.class.findUnique({
-        where: { id: idResult.data },
+        where: {
+          id: idResult.data,
+        },
         select: {
           id: true,
           teacherId: true,
@@ -63,29 +129,23 @@ sessionRouter.get(
       });
 
       if (!targetClass || targetClass.archivedAt !== null) {
-        res.status(404).json({
-          success: false,
-          message: "Class not found.",
-        });
+        sendError(res, 404, "CLASS_NOT_FOUND", "Class not found.");
         return;
       }
-
-      const currentUser = req.authUser!;
 
       if (
         currentUser.role === "TEACHER" &&
         targetClass.teacherId !== currentUser.teacherId
       ) {
-        res.status(403).json({
-          success: false,
-          message: "Access denied.",
-        });
+        sendError(res, 403, "FORBIDDEN", "Access denied.");
         return;
       }
 
       const where = {
         classId: targetClass.id,
+
         ...(status ? { status } : {}),
+
         ...(from || to
           ? {
               startsAt: {
@@ -99,9 +159,12 @@ sessionRouter.get(
       const [items, total] = await Promise.all([
         prisma.classSession.findMany({
           where,
+
           orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+
           skip: (page - 1) * limit,
           take: limit,
+
           select: {
             id: true,
             classId: true,
@@ -109,12 +172,18 @@ sessionRouter.get(
             startsAt: true,
             endsAt: true,
             status: true,
+
             _count: {
-              select: { attendance: true },
+              select: {
+                attendance: true,
+              },
             },
           },
         }),
-        prisma.classSession.count({ where }),
+
+        prisma.classSession.count({
+          where,
+        }),
       ]);
 
       res.status(200).json({
@@ -124,6 +193,7 @@ sessionRouter.get(
             ...session,
             attendanceCount: _count.attendance,
           })),
+
           pagination: {
             page,
             limit,
@@ -138,23 +208,30 @@ sessionRouter.get(
   },
 );
 
+// ============================================================
 // GET /api/sessions/:id
+// Get session details.
+// ADMIN: all sessions.
+// TEACHER: sessions of assigned classes only.
+// ============================================================
+
 sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
   try {
-    const prisma = getPrisma();
-
     const idResult = uuidSchema.safeParse(req.params.id);
 
     if (!idResult.success) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid session ID.",
-      });
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
       return;
     }
 
+    const prisma = getPrisma();
+    const currentUser = req.authUser!;
+
     const session = await prisma.classSession.findUnique({
-      where: { id: idResult.data },
+      where: {
+        id: idResult.data,
+      },
+
       select: {
         id: true,
         classId: true,
@@ -162,6 +239,7 @@ sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
         startsAt: true,
         endsAt: true,
         status: true,
+
         class: {
           select: {
             id: true,
@@ -170,30 +248,25 @@ sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
             archivedAt: true,
           },
         },
+
         _count: {
-          select: { attendance: true },
+          select: {
+            attendance: true,
+          },
         },
       },
     });
 
     if (!session || session.class.archivedAt !== null) {
-      res.status(404).json({
-        success: false,
-        message: "Session not found.",
-      });
+      sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
       return;
     }
-
-    const currentUser = req.authUser!;
 
     if (
       currentUser.role === "TEACHER" &&
       session.class.teacherId !== currentUser.teacherId
     ) {
-      res.status(403).json({
-        success: false,
-        message: "Access denied.",
-      });
+      sendError(res, 403, "FORBIDDEN", "Access denied.");
       return;
     }
 
@@ -206,7 +279,9 @@ sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
         startsAt: session.startsAt,
         endsAt: session.endsAt,
         status: session.status,
+
         attendanceCount: session._count.attendance,
+
         class: {
           id: session.class.id,
           name: session.class.name,
@@ -218,65 +293,53 @@ sessionRouter.get("/sessions/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-const createSessionSchema = z
-  .object({
-    startsAt: z.iso.datetime({ offset: true }),
-    endsAt: z.iso.datetime({ offset: true }),
-    scheduleId: z.uuid().nullable().optional(),
-  })
-  .refine(
-    (data) =>
-      new Date(data.startsAt).getTime() < new Date(data.endsAt).getTime(),
-    {
-      message: "startsAt must be earlier than endsAt.",
-      path: ["endsAt"],
-    },
-  );
-
+// ============================================================
 // POST /api/classes/:classId/sessions
+// Create a scheduled session.
+// ADMIN only.
+// ============================================================
+
 sessionRouter.post(
   "/classes/:classId/sessions",
   requireAuth,
   requireRole("ADMIN"),
   async (req, res, next) => {
     try {
-      const classIdResult = z.uuid().safeParse(req.params.classId);
+      const idResult = uuidSchema.safeParse(req.params.classId);
 
-      if (!classIdResult.success) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid class ID.",
-          },
-        });
+      if (!idResult.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid class ID.");
         return;
       }
 
       const bodyResult = createSessionSchema.safeParse(req.body);
 
       if (!bodyResult.success) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid session data.",
-            details: bodyResult.error.flatten(),
-          },
-        });
+        sendError(
+          res,
+          400,
+          "VALIDATION_ERROR",
+          "Invalid session data.",
+          z.flattenError(bodyResult.error),
+        );
         return;
       }
 
       const prisma = getPrisma();
-      const classId = classIdResult.data;
+      const classId = idResult.data;
+
       const { startsAt, endsAt, scheduleId } = bodyResult.data;
 
       const startDate = new Date(startsAt);
       const endDate = new Date(endsAt);
 
-      // 1. Check class existence and archive status.
+      // 1. Validate target class.
+
       const targetClass = await prisma.class.findUnique({
-        where: { id: classId },
+        where: {
+          id: classId,
+        },
+
         select: {
           id: true,
           archivedAt: true,
@@ -284,58 +347,70 @@ sessionRouter.post(
       });
 
       if (!targetClass || targetClass.archivedAt !== null) {
-        res.status(404).json({
-          success: false,
-          error: {
-            code: "CLASS_NOT_FOUND",
-            message: "Class not found.",
-          },
-        });
+        sendError(res, 404, "CLASS_NOT_FOUND", "Class not found.");
         return;
       }
 
       // 2. Validate optional schedule ownership.
+
       if (scheduleId) {
         const schedule = await prisma.schedule.findUnique({
-          where: { id: scheduleId },
-          select: { classId: true },
+          where: {
+            id: scheduleId,
+          },
+
+          select: {
+            classId: true,
+          },
         });
 
         if (!schedule || schedule.classId !== classId) {
-          res.status(400).json({
-            success: false,
-            error: {
-              code: "INVALID_SCHEDULE",
-              message: "Schedule does not belong to this class.",
-            },
-          });
+          sendError(
+            res,
+            400,
+            "INVALID_SCHEDULE",
+            "Schedule does not belong to this class.",
+          );
           return;
         }
       }
 
-      // 3. Reject overlapping non-cancelled sessions.
+      // 3. Check overlapping non-cancelled sessions.
+
       const overlappingSession = await prisma.classSession.findFirst({
         where: {
           classId,
-          status: { not: "CANCELLED" },
-          startsAt: { lt: endDate },
-          endsAt: { gt: startDate },
+
+          status: {
+            not: "CANCELLED",
+          },
+
+          startsAt: {
+            lt: endDate,
+          },
+
+          endsAt: {
+            gt: startDate,
+          },
         },
-        select: { id: true },
+
+        select: {
+          id: true,
+        },
       });
 
       if (overlappingSession) {
-        res.status(409).json({
-          success: false,
-          error: {
-            code: "SESSION_CONFLICT",
-            message: "Session time overlaps an existing session.",
-          },
-        });
+        sendError(
+          res,
+          409,
+          "SESSION_CONFLICT",
+          "Session time overlaps an existing session.",
+        );
         return;
       }
 
-      // 4. Create a scheduled session.
+      // 4. Create session.
+
       const createdSession = await prisma.classSession.create({
         data: {
           classId,
@@ -344,6 +419,7 @@ sessionRouter.post(
           endsAt: endDate,
           status: "SCHEDULED",
         },
+
         select: {
           id: true,
           classId: true,
@@ -359,23 +435,410 @@ sessionRouter.post(
         data: createdSession,
       });
     } catch (error) {
-      // Handle simultaneous requests with the same class/start time.
+      // Handle unique constraint violations.
+
       if (
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
         error.code === "P2002"
       ) {
-        res.status(409).json({
-          success: false,
-          error: {
-            code: "SESSION_CONFLICT",
-            message: "A session already exists at this start time.",
-          },
-        });
+        sendError(
+          res,
+          409,
+          "SESSION_CONFLICT",
+          "A session already exists at this start time.",
+        );
         return;
       }
 
+      next(error);
+    }
+  },
+);
+
+// ============================================================
+// PATCH /api/sessions/:id
+// Update session time or schedule.
+// ADMIN only.
+// Only SCHEDULED sessions without attendance.
+// ============================================================
+
+sessionRouter.patch(
+  "/sessions/:id",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const idResult = uuidSchema.safeParse(req.params.id);
+
+      const bodyResult = updateSessionSchema.safeParse(req.body);
+
+      if (!idResult.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
+        return;
+      }
+
+      if (!bodyResult.success) {
+        sendError(
+          res,
+          400,
+          "VALIDATION_ERROR",
+          "Invalid session update data.",
+          z.flattenError(bodyResult.error),
+        );
+        return;
+      }
+
+      const prisma = getPrisma();
+      const sessionId = idResult.data;
+      const changes = bodyResult.data;
+
+      // 1. Find existing session.
+
+      const existing = await prisma.classSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+
+        select: {
+          id: true,
+          classId: true,
+          startsAt: true,
+          endsAt: true,
+          status: true,
+
+          class: {
+            select: {
+              archivedAt: true,
+            },
+          },
+
+          _count: {
+            select: {
+              attendance: true,
+            },
+          },
+        },
+      });
+
+      if (!existing || existing.class.archivedAt !== null) {
+        sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
+        return;
+      }
+
+      // 2. Validate session status.
+
+      if (existing.status !== "SCHEDULED") {
+        sendError(
+          res,
+          409,
+          "INVALID_SESSION_STATUS",
+          "Only scheduled sessions can be updated.",
+        );
+        return;
+      }
+
+      // 3. Protect attendance records.
+
+      if (existing._count.attendance > 0) {
+        sendError(
+          res,
+          409,
+          "SESSION_HAS_ATTENDANCE",
+          "Cannot update a session with attendance.",
+        );
+        return;
+      }
+
+      // 4. Resolve final start/end time.
+
+      const startsAt =
+        changes.startsAt !== undefined
+          ? new Date(changes.startsAt)
+          : existing.startsAt;
+
+      const endsAt =
+        changes.endsAt !== undefined
+          ? new Date(changes.endsAt)
+          : existing.endsAt;
+
+      if (startsAt.getTime() >= endsAt.getTime()) {
+        sendError(
+          res,
+          400,
+          "INVALID_TIME_RANGE",
+          "startsAt must be earlier than endsAt.",
+        );
+        return;
+      }
+
+      // 5. Validate schedule ownership.
+
+      if (changes.scheduleId) {
+        const schedule = await prisma.schedule.findUnique({
+          where: {
+            id: changes.scheduleId,
+          },
+
+          select: {
+            classId: true,
+          },
+        });
+
+        if (!schedule || schedule.classId !== existing.classId) {
+          sendError(
+            res,
+            400,
+            "INVALID_SCHEDULE",
+            "Schedule does not belong to this class.",
+          );
+          return;
+        }
+      }
+
+      // 6. Check overlap, excluding current session.
+
+      const overlappingSession = await prisma.classSession.findFirst({
+        where: {
+          classId: existing.classId,
+
+          id: {
+            not: sessionId,
+          },
+
+          status: {
+            not: "CANCELLED",
+          },
+
+          startsAt: {
+            lt: endsAt,
+          },
+
+          endsAt: {
+            gt: startsAt,
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+      if (overlappingSession) {
+        sendError(
+          res,
+          409,
+          "SESSION_CONFLICT",
+          "Session time overlaps another session.",
+        );
+        return;
+      }
+
+      // 7. Conditional update.
+      // Recheck status and attendance at write time.
+
+      const result = await prisma.classSession.updateMany({
+        where: {
+          id: sessionId,
+          status: "SCHEDULED",
+
+          attendance: {
+            none: {},
+          },
+        },
+
+        data: {
+          startsAt,
+          endsAt,
+
+          ...(changes.scheduleId !== undefined
+            ? {
+                scheduleId: changes.scheduleId,
+              }
+            : {}),
+        },
+      });
+
+      if (result.count !== 1) {
+        sendError(
+          res,
+          409,
+          "SESSION_STATE_CONFLICT",
+          "Session status or attendance has changed.",
+        );
+        return;
+      }
+
+      // 8. Return updated session.
+
+      const updated = await prisma.classSession.findUniqueOrThrow({
+        where: {
+          id: sessionId,
+        },
+
+        select: {
+          id: true,
+          classId: true,
+          scheduleId: true,
+          startsAt: true,
+          endsAt: true,
+          status: true,
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        sendError(
+          res,
+          409,
+          "SESSION_CONFLICT",
+          "A session already uses this start time.",
+        );
+        return;
+      }
+
+      next(error);
+    }
+  },
+);
+
+// ============================================================
+// PATCH /api/sessions/:id/cancel
+// Cancel a scheduled session.
+// ADMIN only.
+// Cannot cancel a session with attendance.
+// ============================================================
+
+sessionRouter.patch(
+  "/sessions/:id/cancel",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const idResult = uuidSchema.safeParse(req.params.id);
+
+      if (!idResult.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
+        return;
+      }
+
+      const prisma = getPrisma();
+      const sessionId = idResult.data;
+
+      // 1. Find existing session.
+
+      const existing = await prisma.classSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+
+        select: {
+          id: true,
+          status: true,
+
+          class: {
+            select: {
+              archivedAt: true,
+            },
+          },
+
+          _count: {
+            select: {
+              attendance: true,
+            },
+          },
+        },
+      });
+
+      if (!existing || existing.class.archivedAt !== null) {
+        sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
+        return;
+      }
+
+      // 2. Validate current status.
+
+      if (existing.status !== "SCHEDULED") {
+        sendError(
+          res,
+          409,
+          "INVALID_SESSION_STATUS",
+          "Only scheduled sessions can be cancelled.",
+        );
+        return;
+      }
+
+      // 3. Protect attendance records.
+
+      if (existing._count.attendance > 0) {
+        sendError(
+          res,
+          409,
+          "SESSION_HAS_ATTENDANCE",
+          "Cannot cancel a session with attendance.",
+        );
+        return;
+      }
+
+      // 4. Conditional cancel.
+      // Recheck status and attendance at write time.
+
+      const result = await prisma.classSession.updateMany({
+        where: {
+          id: sessionId,
+          status: "SCHEDULED",
+
+          attendance: {
+            none: {},
+          },
+        },
+
+        data: {
+          status: "CANCELLED",
+        },
+      });
+
+      if (result.count !== 1) {
+        sendError(
+          res,
+          409,
+          "SESSION_STATE_CONFLICT",
+          "Session status or attendance has changed.",
+        );
+        return;
+      }
+
+      // 5. Return cancelled session.
+
+      const cancelled = await prisma.classSession.findUniqueOrThrow({
+        where: {
+          id: sessionId,
+        },
+
+        select: {
+          id: true,
+          classId: true,
+          scheduleId: true,
+          startsAt: true,
+          endsAt: true,
+          status: true,
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: cancelled,
+      });
+    } catch (error) {
       next(error);
     }
   },
