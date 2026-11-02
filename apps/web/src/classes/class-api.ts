@@ -122,3 +122,29 @@ export async function getTeacherOptions(
 ): Promise<TeacherOption[]> {
   return apiClient<TeacherOption[]>("/classes/teacher-options", { token });
 }
+
+/**
+ * M15.6.2 - Get archived classes
+ * Access: ADMIN only
+ */
+export async function getArchivedClasses(
+  token: string,
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  } = {},
+): Promise<ClassListResponse> {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+  });
+
+  if (params.search?.trim()) {
+    query.set("search", params.search.trim());
+  }
+
+  return apiClient<ClassListResponse>(`/classes/archived?${query.toString()}`, {
+    token,
+  });
+}

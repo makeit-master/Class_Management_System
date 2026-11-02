@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
-  Clock3,
   LayoutGrid,
   List,
   MapPin,
@@ -26,6 +25,7 @@ import {
   getClasses,
   getTeacherOptions,
   updateClass,
+  getArchivedClasses,
   type ClassRecord,
   type ClassListResponse,
   type TeacherOption,
@@ -38,6 +38,7 @@ import "./Classes.css";
 // ============================================================
 
 type ViewMode = "grid" | "list";
+type ClassView = "active" | "archived";
 type ModalMode = "create" | "edit" | null;
 
 const COLORS = ["violet", "blue", "orange", "green", "pink"] as const;
@@ -95,6 +96,9 @@ export default function ClassesPage() {
   const { user, token } = useAuth();
 
   const isAdmin = user?.role === "ADMIN";
+  const [classView, setClassView] = useState<ClassView>("active");
+
+  const isArchivedView = isAdmin && classView === "archived";
 
   // ----------------------------------------------------------
   // CLASS LIST
@@ -189,11 +193,15 @@ export default function ClassesPage() {
       setError("");
 
       try {
-        const response = await getClasses(token!, {
+        const params = {
           page,
           limit: PAGE_SIZE,
           search,
-        });
+        };
+
+        const response = isArchivedView
+          ? await getArchivedClasses(token!, params)
+          : await getClasses(token!, params);
 
         if (cancelled) return;
 
@@ -216,7 +224,7 @@ export default function ClassesPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, page, search, refreshKey]);
+  }, [token, page, search, refreshKey, isArchivedView]);
 
   // ==========================================================
   // EFFECT 3: LOAD TEACHER OPTIONS FOR CREATE / EDIT
@@ -327,6 +335,22 @@ export default function ClassesPage() {
     setPage(1);
 
     setRefreshKey((previous) => previous + 1);
+  }
+
+  function switchClassView(nextView: ClassView) {
+    if (nextView === "archived" && !isAdmin) {
+      return;
+    }
+
+    setClassView(nextView);
+
+    // Reset filters to avoid confusing empty results.
+    setPage(1);
+    setQuery("");
+    setSearch("");
+    setGrade("All grades");
+    setTeacher("All teachers");
+    setSelectedId(null);
   }
 
   async function handleSubmitClass(event: FormEvent<HTMLFormElement>) {
@@ -477,14 +501,14 @@ export default function ClassesPage() {
       <div className="classes-toolbar">
         <div>
           <h2>
-            All classes{" "}
+            {isArchivedView ? "Archived classes" : "All classes"}{" "}
             <span className="classes-count">{pagination.total} classes</span>
           </h2>
 
           <p>Manage your classes and keep learning on track.</p>
         </div>
 
-        {isAdmin && (
+        {isAdmin && !isArchivedView && (
           <button
             type="button"
             className="classes-primary"
@@ -495,6 +519,35 @@ export default function ClassesPage() {
           </button>
         )}
       </div>
+
+      {/* ACTIVE / ARCHIVED TABS */}
+      {isAdmin && (
+        <div
+          className="classes-status-tabs"
+          role="group"
+          aria-label="Class status"
+        >
+          <button
+            type="button"
+            className={!isArchivedView ? "active" : ""}
+            aria-pressed={!isArchivedView}
+            onClick={() => switchClassView("active")}
+          >
+            <BookOpen size={16} />
+            Active Classes
+          </button>
+
+          <button
+            type="button"
+            className={isArchivedView ? "active" : ""}
+            aria-pressed={isArchivedView}
+            onClick={() => switchClassView("archived")}
+          >
+            <Archive size={16} />
+            Archived Classes
+          </button>
+        </div>
+      )}
 
       {/* FILTERS */}
 
@@ -603,9 +656,15 @@ export default function ClassesPage() {
                       <BookOpen size={22} strokeWidth={1.7} />
                     </span>
 
-                    <span className="classes-status">
+                    <span
+                      className={
+                        isArchivedView
+                          ? "classes-status is-archived"
+                          : "classes-status"
+                      }
+                    >
                       <span />
-                      Active
+                      {isArchivedView ? "Archived" : "Active"}
                     </span>
                   </div>
 
@@ -642,10 +701,13 @@ export default function ClassesPage() {
 
                   {expanded && (
                     <div className="classes-detail">
-                      <span>
-                        <Clock3 size={15} />
-                        Schedule not available yet
-                      </span>
+                      {isArchivedView && item.archivedAt && (
+                        <span>
+                          <Archive size={15} />
+                          Archived{" "}
+                          {new Date(item.archivedAt).toLocaleDateString()}
+                        </span>
+                      )}
 
                       <span>
                         <CalendarDays size={15} />
@@ -674,7 +736,7 @@ export default function ClassesPage() {
                       <ArrowRight size={16} />
                     </button>
 
-                    {isAdmin && (
+                    {isAdmin && !isArchivedView && (
                       <div className="classes-admin-actions">
                         <button
                           type="button"
