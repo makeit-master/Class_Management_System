@@ -113,6 +113,12 @@ export const StudentScalarFieldEnum = {
   email: 'email',
   phone: 'phone',
   dateOfBirth: 'dateOfBirth',
+  gender: 'gender',
+  parentName: 'parentName',
+  parentPhone: 'parentPhone',
+  address: 'address',
+  notes: 'notes',
+  archivedAt: 'archivedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

@@ -138,6 +138,13 @@ export type DateTimeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
 }
 
+export type EnumStudentGenderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.StudentGender | Prisma.EnumStudentGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel> | $Enums.StudentGender | null
+}
+
 export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   equals?: Date | string | Prisma.DateTimeFieldRefInput<$PrismaModel> | null
   in?: Date[] | string[] | Prisma.ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -150,6 +157,16 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type EnumStudentGenderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.StudentGender | Prisma.EnumStudentGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumStudentGenderNullableWithAggregatesFilter<$PrismaModel> | $Enums.StudentGender | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel>
 }
 
 export type EnumEnrollmentStatusFilter<$PrismaModel = never> = {
@@ -421,6 +438,13 @@ export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
 }
 
+export type NestedEnumStudentGenderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.StudentGender | Prisma.EnumStudentGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel> | $Enums.StudentGender | null
+}
+
 export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   equals?: Date | string | Prisma.DateTimeFieldRefInput<$PrismaModel> | null
   in?: Date[] | string[] | Prisma.ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -433,6 +457,16 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumStudentGenderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.StudentGender | Prisma.EnumStudentGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.StudentGender[] | Prisma.ListEnumStudentGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumStudentGenderNullableWithAggregatesFilter<$PrismaModel> | $Enums.StudentGender | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumStudentGenderNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumEnrollmentStatusFilter<$PrismaModel = never> = {
