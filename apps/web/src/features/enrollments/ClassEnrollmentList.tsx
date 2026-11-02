@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EnrollmentApiError, getEnrollments } from "./enrollment.api";
 
+import DropStudentModal from "./DropStudentModal";
+
 import EnrollStudentModal from "./EnrollmentStudentModal";
 
 import type {
   CreateEnrollmentData,
   EnrollmentListData,
+  EnrollmentListItem,
   EnrollmentStatus,
 } from "./enrollment.types";
 
@@ -16,6 +19,7 @@ import { useAuth } from "../../auth/AuthContext";
 interface ClassEnrollmentListProps {
   classId: string;
   token: string;
+  onEnrollmentChanged?: () => void;
 }
 
 const PAGE_LIMIT = 10;
@@ -69,6 +73,7 @@ function getErrorMessage(error: unknown): string {
 export default function ClassEnrollmentList({
   classId,
   token,
+  onEnrollmentChanged,
 }: ClassEnrollmentListProps) {
   const { user } = useAuth();
 
@@ -77,6 +82,8 @@ export default function ClassEnrollmentList({
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
 
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [dropTarget, setDropTarget] = useState<EnrollmentListItem | null>(null);
   // ==========================================================
   // STATE
   // ==========================================================
@@ -201,15 +208,46 @@ export default function ClassEnrollmentList({
         : "Student enrolled successfully.",
     );
 
-    // Always return to the Active tab.
     setStatus("ACTIVE");
     setPage(1);
     setSearch("");
 
-    // Refetch the list even if the tab and page
-    // were already ACTIVE / 1.
+    // Refresh Enrollment List.
     setRefreshKey((previous) => previous + 1);
+
+    // Refresh the class card count.
+    onEnrollmentChanged?.();
   }
+
+  function handleOpenDrop(enrollment: EnrollmentListItem): void {
+    if (!isAdmin || enrollment.status !== "ACTIVE") {
+      return;
+    }
+
+    setSuccessMessage("");
+    setDropTarget(enrollment);
+  }
+
+  function handleDropSuccess(): void {
+    setDropTarget(null);
+
+    setSuccessMessage("Student dropped successfully.");
+
+    setSearch("");
+
+    // Move back if the last item on a later page
+    // has been dropped.
+    if (status === "ACTIVE" && data?.items.length === 1 && page > 1) {
+      setPage((current) => Math.max(1, current - 1));
+    }
+
+    // Refresh Enrollment List.
+    setRefreshKey((previous) => previous + 1);
+
+    // Notify ClassesPage to refresh the class count.
+    onEnrollmentChanged?.();
+  }
+
   function handlePreviousPage(): void {
     setPage((previous) => Math.max(1, previous - 1));
   }
@@ -398,6 +436,8 @@ export default function ClassEnrollmentList({
                     <th>Contact</th>
                     <th>Enrollment Date</th>
                     <th>Status</th>
+
+                    {isAdmin && status === "ACTIVE" && <th>Actions</th>}
                   </tr>
                 </thead>
 
@@ -447,6 +487,22 @@ export default function ClassEnrollmentList({
                           {item.status === "ACTIVE" ? "Active" : "Dropped"}
                         </span>
                       </td>
+
+                      {/* M17.4.4 - DROP ACTION */}
+
+                      {isAdmin && status === "ACTIVE" && (
+                        <td>
+                          <button
+                            type="button"
+                            className="cms-enrollment-drop"
+                            onClick={() => handleOpenDrop(item)}
+                            disabled={loading}
+                            aria-label={`Drop ${item.student.fullName} from class`}
+                          >
+                            Drop
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -490,6 +546,19 @@ export default function ClassEnrollmentList({
           token={token}
           onClose={() => setEnrollModalOpen(false)}
           onEnrolled={handleEnrollSuccess}
+        />
+      )}
+
+      {/* M17.4.4 - DROP STUDENT MODAL */}
+
+      {isAdmin && dropTarget && (
+        <DropStudentModal
+          enrollmentId={dropTarget.id}
+          studentName={dropTarget.student.fullName}
+          className={data?.class.name ?? "this class"}
+          token={token}
+          onClose={() => setDropTarget(null)}
+          onDropped={handleDropSuccess}
         />
       )}
     </section>

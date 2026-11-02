@@ -1,0 +1,130 @@
+/* ============================================================
+   M17.4.4 - DROP STUDENT MODAL
+============================================================ */
+
+.cms-drop-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.cms-drop-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.cms-drop-content {
+  padding: 26px;
+  text-align: center;
+}
+
+.cms-drop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.cms-drop-content h2 {
+  margin: 0 0 12px;
+  color: var(--c-text);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.cms-drop-content p {
+  margin: 0;
+  color: var(--c-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.cms-drop-content p strong {
+  color: var(--c-text);
+}
+
+.cms-drop-notice {
+  margin-top: 18px;
+  padding: 13px 15px;
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  background: var(--c-elevated);
+  color: var(--c-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.cms-drop-error {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  font-size: 13px;
+  text-align: left;
+}
+
+.cms-drop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.cms-drop-cancel,
+.cms-drop-confirm {
+  padding: 11px 17px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cms-drop-cancel {
+  border: 1px solid var(--c-border);
+  background: var(--c-elevated);
+  color: var(--c-text);
+}
+
+.cms-drop-confirm {
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+
+.cms-drop-confirm:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.cms-drop-dialog button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .cms-drop-content {
+    padding: 20px;
+  }
+
+  .cms-drop-actions button {
+    flex: 1;
+  }
+}

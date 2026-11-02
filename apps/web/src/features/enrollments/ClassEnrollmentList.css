@@ -344,3 +344,35 @@
     flex: 1;
   }
 }
+
+/* ============================================================
+   M17.4.4 - DROP STUDENT ACTION
+============================================================ */
+
+.cms-enrollment-drop {
+  padding: 8px 13px;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cms-enrollment-drop:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.16);
+}
+
+.cms-enrollment-drop:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark-theme .cms-enrollment-drop {
+  color: #fca5a5;
+  border-color: rgba(252, 165, 165, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+}
