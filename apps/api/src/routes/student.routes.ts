@@ -46,6 +46,19 @@ const createStudentSchema = z
   })
   .strict();
 
+/**
+ * M16.2.2 - Update Student Validation
+ *
+ * studentCode is immutable in this milestone.
+ * At least one updatable field is required.
+ */
+const updateStudentSchema = createStudentSchema
+  .omit({ studentCode: true })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
+
 // ============================================================
 // SHARED RESPONSE SELECTION
 // ============================================================
@@ -327,6 +340,99 @@ studentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
       return;
     }
 
+    next(error);
+  }
+});
+
+/**
+ * M16.2.2 - Update Student
+ *
+ * PATCH /api/students/:id
+ * Access: ADMIN only
+ */
+studentRouter.patch("/:id", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    const parsedId = studentIdSchema.safeParse(req.params.id);
+
+    if (!parsedId.success) {
+      throw new HttpError(400, "Invalid student ID");
+    }
+
+    const parsedBody = updateStudentSchema.safeParse(req.body);
+
+    if (!parsedBody.success) {
+      throw new HttpError(400, "Invalid student data");
+    }
+
+    const studentId = parsedId.data;
+    const input = parsedBody.data;
+
+    const prisma = getPrisma();
+
+    // Only active students are editable.
+    // updateMany applies the archive condition atomically.
+    const result = await prisma.student.updateMany({
+      where: {
+        id: studentId,
+        archivedAt: null,
+      },
+      data: {
+        ...(input.fullName !== undefined && {
+          fullName: input.fullName,
+        }),
+
+        ...(input.email !== undefined && {
+          email: input.email,
+        }),
+
+        ...(input.phone !== undefined && {
+          phone: input.phone,
+        }),
+
+        ...(input.dateOfBirth !== undefined && {
+          dateOfBirth: input.dateOfBirth
+            ? new Date(`${input.dateOfBirth}T00:00:00.000Z`)
+            : null,
+        }),
+
+        ...(input.gender !== undefined && {
+          gender: input.gender,
+        }),
+
+        ...(input.parentName !== undefined && {
+          parentName: input.parentName,
+        }),
+
+        ...(input.parentPhone !== undefined && {
+          parentPhone: input.parentPhone,
+        }),
+
+        ...(input.address !== undefined && {
+          address: input.address,
+        }),
+
+        ...(input.notes !== undefined && {
+          notes: input.notes,
+        }),
+      },
+    });
+
+    if (result.count === 0) {
+      throw new HttpError(404, "Student not found");
+    }
+
+    const updatedStudent = await prisma.student.findUnique({
+      where: {
+        id: studentId,
+      },
+      select: studentSelect,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedStudent,
+    });
+  } catch (error) {
     next(error);
   }
 });
