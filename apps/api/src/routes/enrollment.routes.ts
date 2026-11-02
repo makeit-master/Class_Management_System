@@ -31,6 +31,8 @@ const createEnrollmentSchema = z
     classId: z.uuid(),
   })
   .strict();
+
+const enrollmentIdSchema = z.uuid();
 // ============================================================
 // GET /api/enrollments
 //
@@ -367,3 +369,113 @@ enrollmentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
     next(error);
   }
 });
+/**
+ * M17.3 - Drop Student from Class
+ *
+ * PATCH /api/enrollments/:id/drop
+ * Access: ADMIN only
+ *
+ * Soft drop:
+ * - ACTIVE -> DROPPED
+ * - Preserve enrollment ID
+ * - Preserve attendance and grade history
+ */
+enrollmentRouter.patch(
+  "/:id/drop",
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      // ============================================
+      // 1. VALIDATE ENROLLMENT ID
+      // ============================================
+
+      const parsedId = enrollmentIdSchema.safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        throw new HttpError(400, "Invalid enrollment ID");
+      }
+
+      const enrollmentId = parsedId.data;
+      const prisma = getPrisma();
+
+      // ============================================
+      // 2. FIND EXISTING ENROLLMENT
+      // ============================================
+
+      const existingEnrollment = await prisma.enrollment.findUnique({
+        where: {
+          id: enrollmentId,
+        },
+        select: {
+          id: true,
+          status: true,
+          studentId: true,
+          classId: true,
+        },
+      });
+
+      if (!existingEnrollment) {
+        throw new HttpError(404, "Enrollment not found");
+      }
+
+      // ============================================
+      // 3. VERIFY CURRENT STATUS
+      // ============================================
+
+      if (existingEnrollment.status === "DROPPED") {
+        throw new HttpError(409, "Student has already dropped this class");
+      }
+
+      // ============================================
+      // 4. ATOMIC STATUS UPDATE
+      // ============================================
+
+      const result = await prisma.enrollment.updateMany({
+        where: {
+          id: enrollmentId,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "DROPPED",
+        },
+      });
+
+      if (result.count === 0) {
+        throw new HttpError(
+          409,
+          "Enrollment status changed. Please try again.",
+        );
+      }
+
+      // ============================================
+      // 5. FETCH UPDATED ENROLLMENT
+      // ============================================
+
+      const updatedEnrollment = await prisma.enrollment.findUniqueOrThrow({
+        where: {
+          id: enrollmentId,
+        },
+        select: {
+          id: true,
+          studentId: true,
+          classId: true,
+          status: true,
+          enrolledAt: true,
+        },
+      });
+
+      // ============================================
+      // 6. RESPONSE
+      // ============================================
+
+      res.status(200).json({
+        success: true,
+        data: {
+          enrollment: updatedEnrollment,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
