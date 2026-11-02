@@ -14,7 +14,7 @@ import type {
 } from "./enrollment.types";
 
 import "./ClassEnrollmentList.css";
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../auth/auth-context";
 
 interface ClassEnrollmentListProps {
   classId: string;

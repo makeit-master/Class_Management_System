@@ -1,29 +1,10 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { loginRequest, meRequest, type AuthUser } from "./auth-api";
 
+import { AuthContext, type SessionNotice } from "./auth-context";
+
 import { setUnauthorizedHandler } from "../lib/api-client";
-
-export type SessionNotice = "expired" | "unauthorized" | null;
-
-type AuthContextType = {
-  user: AuthUser | null;
-  token: string | null;
-  sessionNotice: SessionNotice;
-  isInitializing: boolean;
-  clearSessionNotice: () => void;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_STORAGE_KEY = "classflow_access_token";
 
@@ -37,7 +18,9 @@ function getTokenExpiry(token: string): number | null {
   try {
     const payload = token.split(".")[1];
 
-    if (!payload) return null;
+    if (!payload) {
+      return null;
+    }
 
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
 
@@ -115,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    async function restoreSession() {
+    async function restoreSession(): Promise<void> {
       const storedToken = readStoredToken();
 
       // No previous session.
@@ -147,9 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Access denied");
         }
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
-        // Token may expire while the request is running.
+        // Token may expire during the request.
         if (expiresAt <= Date.now()) {
           endSession("expired");
           return;
@@ -159,9 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser);
         setSessionNotice(null);
       } catch {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
-        // Invalid token or failed session validation.
         endSession("unauthorized");
       } finally {
         if (!cancelled) {
@@ -196,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("The session has already expired or is invalid.");
     }
 
-    // Save token before updating React state.
+    // Persist the token before updating React state.
     saveStoredToken(accessToken);
 
     setSessionNotice(null);
@@ -231,31 +217,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ==========================================================
 
   useEffect(() => {
-    if (!token) return;
-
-    const expiresAt = getTokenExpiry(token);
-
-    if (expiresAt === null) {
-      endSession("expired");
+    if (!token) {
       return;
     }
+
+    const expiresAt = getTokenExpiry(token);
 
     let timeout: number | undefined;
 
     const checkExpiry = () => {
-      const remaining = expiresAt - Date.now();
+      const remaining = expiresAt === null ? 0 : expiresAt - Date.now();
 
       if (remaining <= 0) {
         endSession("expired");
-      } else {
-        timeout = window.setTimeout(
-          checkExpiry,
-          Math.min(remaining, 2_147_483_647),
-        );
+        return;
       }
+
+      timeout = window.setTimeout(
+        checkExpiry,
+        Math.min(remaining, 2_147_483_647),
+      );
     };
 
-    checkExpiry();
+    // Check asynchronously to avoid synchronous
+    // state updates inside the effect.
+    timeout = window.setTimeout(checkExpiry, 0);
 
     return () => {
       if (timeout !== undefined) {
@@ -307,18 +293,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// ============================================================
-// AUTH HOOK
-// ============================================================
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
-  return context;
 }

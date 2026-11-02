@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./auth-context";
 import { can, type AppPermission } from "./permissions";
 
 type CanAccessProps = {

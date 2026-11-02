@@ -21,7 +21,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../auth/auth-context";
 
 import {
   createStudent,
@@ -484,13 +484,7 @@ export default function StudentsPage() {
   // ==========================================================
 
   useEffect(() => {
-    if (!token) {
-      setStudents([]);
-      setPagination(INITIAL_PAGINATION);
-      setError("");
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     let cancelled = false;
 
@@ -534,12 +528,7 @@ export default function StudentsPage() {
   // ==========================================================
 
   useEffect(() => {
-    if (!detailId || !token) {
-      setStudentDetail(null);
-      setDetailError("");
-      setDetailLoading(false);
-      return;
-    }
+    if (!detailId || !token) return;
 
     let cancelled = false;
 

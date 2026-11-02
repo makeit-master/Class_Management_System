@@ -10,7 +10,7 @@ import GradesPage from "../../features/grades/GradesPage";
 import SettingsPage from "../../features/settings/SettingsPage";
 
 import { canAccessPage } from "../../auth/permissions";
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../auth/auth-context";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";

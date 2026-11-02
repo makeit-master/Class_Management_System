@@ -165,21 +165,22 @@ export default function AttendancePage() {
       ),
     [classStudents, query],
   );
-  const totals = useMemo(
-    () => ({
-      Present: classStudents.filter(
-        (student) => getStatus(student.id) === "Present",
-      ).length,
-      Absent: classStudents.filter(
-        (student) => getStatus(student.id) === "Absent",
-      ).length,
-      Late: classStudents.filter((student) => getStatus(student.id) === "Late")
-        .length,
-      Unmarked: classStudents.filter((student) => !getStatus(student.id))
-        .length,
-    }),
-    [classStudents, records, date],
-  );
+  const totals = {
+    Present: classStudents.filter(
+      (student) => getStatus(student.id) === "Present",
+    ).length,
+
+    Absent: classStudents.filter(
+      (student) => getStatus(student.id) === "Absent",
+    ).length,
+
+    Late: classStudents.filter((student) => getStatus(student.id) === "Late")
+      .length,
+
+    Unmarked: classStudents.filter(
+      (student) => getStatus(student.id) === undefined,
+    ).length,
+  };
 
   const mark = (studentId: string, status: AttendanceStatus) => {
     setRecords((previous) => ({ ...previous, [keyFor(studentId)]: status }));

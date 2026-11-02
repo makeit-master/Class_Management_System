@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   Sun,
 } from "lucide-react";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/auth-context";
 import { ApiError } from "../lib/api-client";
 import "./LoginPage.css";
 

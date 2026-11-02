@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./auth-context";
 import LoginPage from "../pages/LoginPage";
 
 export default function AuthGate({ children }: { children: ReactNode }) {

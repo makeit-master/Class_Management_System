@@ -18,7 +18,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { useAuth } from "../../auth/AuthContext";
+import { useAuth } from "../../auth/auth-context";
 
 import ClassEnrollmentList from "../enrollments/ClassEnrollmentList";
 
@@ -194,10 +194,6 @@ export default function ClassesPage() {
 
   useEffect(() => {
     if (!token) {
-      setClasses([]);
-      setPagination(INITIAL_PAGINATION);
-      setError("");
-      setLoading(false);
       return;
     }
 

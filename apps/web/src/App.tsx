@@ -1,5 +1,5 @@
 import AppLayout from "./components/layout/AppLayout";
-import { useAuth } from "./auth/AuthContext";
+import { useAuth } from "./auth/auth-context";
 
 function App() {
   const { user, logout } = useAuth();
