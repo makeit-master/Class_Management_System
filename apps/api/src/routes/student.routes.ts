@@ -435,4 +435,138 @@ studentRouter.patch("/:id", requireRole("ADMIN"), async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+
+  /**
+   * M16.5.1 - Archive Student
+   *
+   * PATCH /api/students/:id/archive
+   * Access: ADMIN only
+   *
+   * Soft archive: preserves student and related records.
+   */
+  studentRouter.patch(
+    "/:id/archive",
+    requireRole("ADMIN"),
+    async (req, res, next) => {
+      try {
+        const parsedId = studentIdSchema.safeParse(req.params.id);
+
+        if (!parsedId.success) {
+          throw new HttpError(400, "Invalid student ID");
+        }
+
+        const studentId = parsedId.data;
+        const prisma = getPrisma();
+
+        const existingStudent = await prisma.student.findUnique({
+          where: { id: studentId },
+          select: {
+            id: true,
+            archivedAt: true,
+          },
+        });
+
+        if (!existingStudent) {
+          throw new HttpError(404, "Student not found");
+        }
+
+        if (existingStudent.archivedAt !== null) {
+          throw new HttpError(409, "Student is already archived");
+        }
+
+        // Atomic conditional update.
+        const result = await prisma.student.updateMany({
+          where: {
+            id: studentId,
+            archivedAt: null,
+          },
+          data: {
+            archivedAt: new Date(),
+          },
+        });
+
+        if (result.count === 0) {
+          throw new HttpError(409, "Student status changed. Please try again.");
+        }
+
+        const archivedStudent = await prisma.student.findUniqueOrThrow({
+          where: { id: studentId },
+          select: studentSelect,
+        });
+
+        res.status(200).json({
+          success: true,
+          data: archivedStudent,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  /**
+   * M16.5.1 - Restore Student
+   *
+   * PATCH /api/students/:id/restore
+   * Access: ADMIN only
+   */
+  studentRouter.patch(
+    "/:id/restore",
+    requireRole("ADMIN"),
+    async (req, res, next) => {
+      try {
+        const parsedId = studentIdSchema.safeParse(req.params.id);
+
+        if (!parsedId.success) {
+          throw new HttpError(400, "Invalid student ID");
+        }
+
+        const studentId = parsedId.data;
+        const prisma = getPrisma();
+
+        const existingStudent = await prisma.student.findUnique({
+          where: { id: studentId },
+          select: {
+            id: true,
+            archivedAt: true,
+          },
+        });
+
+        if (!existingStudent) {
+          throw new HttpError(404, "Student not found");
+        }
+
+        if (existingStudent.archivedAt === null) {
+          throw new HttpError(409, "Student is not archived");
+        }
+
+        // Only archived records can be restored.
+        const result = await prisma.student.updateMany({
+          where: {
+            id: studentId,
+            archivedAt: { not: null },
+          },
+          data: {
+            archivedAt: null,
+          },
+        });
+
+        if (result.count === 0) {
+          throw new HttpError(409, "Student status changed. Please try again.");
+        }
+
+        const restoredStudent = await prisma.student.findUniqueOrThrow({
+          where: { id: studentId },
+          select: studentSelect,
+        });
+
+        res.status(200).json({
+          success: true,
+          data: restoredStudent,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 });
