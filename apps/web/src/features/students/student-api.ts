@@ -131,3 +131,29 @@ export function updateStudent(
     },
   );
 }
+
+export function archiveStudent(
+  token: string,
+  studentId: string,
+): Promise<StudentRecord> {
+  return apiClient<StudentRecord>(
+    `/students/${encodeURIComponent(studentId)}/archive`,
+    {
+      method: "PATCH",
+      token,
+    },
+  );
+}
+
+export function restoreStudent(
+  token: string,
+  studentId: string,
+): Promise<StudentRecord> {
+  return apiClient<StudentRecord>(
+    `/students/${encodeURIComponent(studentId)}/restore`,
+    {
+      method: "PATCH",
+      token,
+    },
+  );
+}

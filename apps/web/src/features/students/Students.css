@@ -1036,3 +1036,40 @@
 .students-status-archived i {
   background: #92929f;
 }
+
+/* M16.5.4 - Student Archive / Restore actions */
+
+.students-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.students-lifecycle-action:focus-visible {
+  outline: 2px solid #8056e9;
+  outline-offset: 2px;
+}
+
+.students-lifecycle-modal {
+  width: min(440px, calc(100vw - 32px));
+  max-width: 100%;
+}
+
+.students-lifecycle-icon {
+  color: #8056e9;
+}
+
+.students-lifecycle-modal p {
+  line-height: 1.65;
+}
+
+.students-lifecycle-modal .students-form-error {
+  margin: 14px 0 0;
+  text-align: left;
+}
+
+.students-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

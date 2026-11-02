@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import {
   Check,
+  Archive,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
   Mail,
@@ -26,6 +28,8 @@ import {
   getStudents,
   updateStudent,
   getStudentById,
+  archiveStudent,
+  restoreStudent,
   type CreateStudentInput,
   type StudentGender,
   type StudentListResponse,
@@ -440,6 +444,13 @@ export default function StudentsPage() {
 
   const isEditing = modalMode === "edit";
 
+  // M16.5.4: Archive / Restore confirmation state.
+  const [lifecycleTarget, setLifecycleTarget] = useState<StudentRecord | null>(
+    null,
+  );
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState("");
+
   // ----------------------------------------------------------
   // DETAIL
   // ----------------------------------------------------------
@@ -578,6 +589,64 @@ export default function StudentsPage() {
     setQuery("");
     setSearch("");
     setError("");
+  }
+
+  function openLifecycleModal(student: StudentRecord) {
+    if (!isAdmin) return;
+    setMessage("");
+    setLifecycleError("");
+    setLifecycleTarget(student);
+  }
+
+  function closeLifecycleModal() {
+    if (lifecycleBusy) return;
+    setLifecycleTarget(null);
+    setLifecycleError("");
+  }
+
+  async function confirmLifecycleChange() {
+    if (!isAdmin || !token || !lifecycleTarget || lifecycleBusy) return;
+
+    const target = lifecycleTarget;
+    const restoring = Boolean(target.archivedAt);
+
+    setLifecycleBusy(true);
+    setLifecycleError("");
+
+    try {
+      if (restoring) {
+        await restoreStudent(token, target.id);
+      } else {
+        await archiveStudent(token, target.id);
+      }
+
+      setLifecycleTarget(null);
+      setMessage(
+        restoring
+          ? `Restored ${target.fullName} successfully.`
+          : `Archived ${target.fullName} successfully.`,
+      );
+
+      // When removing the last row of a non-first page, move back one page.
+      // Otherwise, reload the current tab from the server.
+      if (students.length === 1 && page > 1) {
+        setPage((current) => Math.max(1, current - 1));
+      } else {
+        refreshStudents();
+      }
+    } catch (caught) {
+      // Keep the dialog open, so a failed request never looks successful.
+      setLifecycleError(
+        getErrorMessage(
+          caught,
+          restoring
+            ? "Unable to restore student."
+            : "Unable to archive student.",
+        ),
+      );
+    } finally {
+      setLifecycleBusy(false);
+    }
   }
 
   function openCreateModal() {
@@ -962,17 +1031,38 @@ export default function StudentsPage() {
 
                           {isAdmin && (
                             <td>
-                              {!student.archivedAt && (
+                              <div className="students-row-actions">
+                                {!student.archivedAt && (
+                                  <button
+                                    type="button"
+                                    className="students-icon-btn"
+                                    aria-label={`Edit ${student.fullName}`}
+                                    title="Edit student"
+                                    onClick={() => openEditModal(student)}
+                                    disabled={lifecycleBusy}
+                                  >
+                                    <Pencil size={17} />
+                                  </button>
+                                )}
                                 <button
                                   type="button"
-                                  className="students-icon-btn"
-                                  aria-label={`Edit ${student.fullName}`}
-                                  title="Edit student"
-                                  onClick={() => openEditModal(student)}
+                                  className="students-icon-btn students-lifecycle-action"
+                                  aria-label={`${student.archivedAt ? "Restore" : "Archive"} ${student.fullName}`}
+                                  title={
+                                    student.archivedAt
+                                      ? "Restore student"
+                                      : "Archive student"
+                                  }
+                                  onClick={() => openLifecycleModal(student)}
+                                  disabled={lifecycleBusy}
                                 >
-                                  <Pencil size={17} />
+                                  {student.archivedAt ? (
+                                    <RotateCcw size={17} />
+                                  ) : (
+                                    <Archive size={17} />
+                                  )}
                                 </button>
-                              )}
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -1039,6 +1129,90 @@ export default function StudentsPage() {
           </div>
         </>
       )}
+      {/* =====================================================
+          ARCHIVE / RESTORE CONFIRMATION (ADMIN ONLY)
+          ===================================================== */}
+
+      {lifecycleTarget && isAdmin && (
+        <div
+          className="students-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeLifecycleModal();
+          }}
+        >
+          <section
+            className="students-modal students-confirm students-lifecycle-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="students-lifecycle-title"
+            aria-describedby="students-lifecycle-description"
+          >
+            {lifecycleTarget.archivedAt ? (
+              <RotateCcw size={28} className="students-lifecycle-icon" />
+            ) : (
+              <Archive size={28} className="students-lifecycle-icon" />
+            )}
+
+            <h3 id="students-lifecycle-title">
+              {lifecycleTarget.archivedAt
+                ? "Restore student?"
+                : "Archive student?"}
+            </h3>
+
+            <p id="students-lifecycle-description">
+              {lifecycleTarget.archivedAt ? (
+                <>
+                  Restore <strong>{lifecycleTarget.fullName}</strong> to the
+                  Active Students list? Their student code and learning records
+                  stay unchanged.
+                </>
+              ) : (
+                <>
+                  Archive <strong>{lifecycleTarget.fullName}</strong>? Their
+                  profile will be hidden from Active Students, but no student,
+                  enrollment, attendance, or grade records will be deleted.
+                </>
+              )}
+            </p>
+
+            {lifecycleError && (
+              <p className="students-form-error" role="alert">
+                {lifecycleError}
+              </p>
+            )}
+
+            <div className="students-modal-actions">
+              <button
+                type="button"
+                className="students-btn"
+                onClick={closeLifecycleModal}
+                disabled={lifecycleBusy}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="students-btn students-btn-primary"
+                onClick={() => void confirmLifecycleChange()}
+                disabled={lifecycleBusy}
+              >
+                {lifecycleTarget.archivedAt ? (
+                  <RotateCcw size={16} />
+                ) : (
+                  <Archive size={16} />
+                )}
+                {lifecycleBusy
+                  ? "Saving..."
+                  : lifecycleTarget.archivedAt
+                    ? "Restore student"
+                    : "Archive student"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* =====================================================
           CREATE / EDIT MODAL
           ===================================================== */}
