@@ -157,6 +157,65 @@ classRouter.get(
   },
 );
 
+/**
+ * M15.6.1 - Archived Classes List
+ * GET /api/classes/archived
+ * Access: ADMIN only
+ */
+classRouter.get("/archived", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    const parsed = listQuerySchema.safeParse(req.query);
+
+    if (!parsed.success) {
+      throw new HttpError(400, "Invalid query parameters");
+    }
+
+    const { page, limit, search } = parsed.data;
+    const prisma = getPrisma();
+
+    const where = {
+      archivedAt: { not: null },
+      ...(search
+        ? {
+            name: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          }
+        : {}),
+    };
+
+    const [classes, total] = await Promise.all([
+      prisma.class.findMany({
+        where,
+        select: classSelect,
+        orderBy: {
+          archivedAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+
+      prisma.class.count({ where }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        items: classes,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/classes/:id
 classRouter.get("/:id", async (req, res, next) => {
   try {
@@ -421,6 +480,60 @@ classRouter.patch(
       res.status(200).json({
         success: true,
         data: archivedClass,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * M15.6.1 - Restore Class
+ * PATCH /api/classes/:id/restore
+ * Access: ADMIN only
+ */
+classRouter.patch(
+  "/:id/restore",
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const parsedId = classIdSchema.safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        throw new HttpError(400, "Invalid class ID");
+      }
+
+      const prisma = getPrisma();
+      const classId = parsedId.data;
+
+      // Restore only archived classes.
+      await prisma.class.updateMany({
+        where: {
+          id: classId,
+          archivedAt: {
+            not: null,
+          },
+        },
+        data: {
+          archivedAt: null,
+        },
+      });
+
+      // Supports repeated restore requests.
+      const restoredClass = await prisma.class.findUnique({
+        where: {
+          id: classId,
+        },
+        select: classSelect,
+      });
+
+      if (!restoredClass) {
+        throw new HttpError(404, "Class not found");
+      }
+
+      res.status(200).json({
+        success: true,
+        data: restoredClass,
       });
     } catch (error) {
       next(error);
