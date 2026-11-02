@@ -1,0 +1,294 @@
+.cms-enrollment {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 24px;
+  color: #111827;
+}
+
+.cms-enrollment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cms-enrollment-header h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.cms-enrollment-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.cms-enrollment button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.cms-enrollment button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cms-enrollment-refresh,
+.cms-enrollment-page-actions button {
+  padding: 9px 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+}
+
+.cms-enrollment-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.cms-enrollment-tabs button {
+  padding: 11px 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #6b7280;
+}
+
+.cms-enrollment-tabs button.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
+.cms-enrollment-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.cms-enrollment-toolbar input {
+  padding: 11px 13px;
+  width: min(100%, 340px);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.cms-enrollment-toolbar > span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.cms-enrollment-table-wrapper {
+  overflow-x: auto;
+}
+
+.cms-enrollment-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.cms-enrollment-table th,
+.cms-enrollment-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.cms-enrollment-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cms-enrollment-table td {
+  vertical-align: middle;
+}
+
+.cms-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #64748b;
+}
+
+.cms-archived {
+  display: block;
+  margin-top: 5px;
+  color: #b45309;
+}
+
+.cms-enrollment-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cms-enrollment-badge.is-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cms-enrollment-badge.is-dropped {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.cms-enrollment-state,
+.cms-enrollment-error {
+  padding: 40px 20px;
+  text-align: center;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #6b7280;
+}
+
+.cms-enrollment-error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.cms-enrollment-error button {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: white;
+  color: #b91c1c;
+}
+
+.cms-enrollment-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.cms-enrollment-page-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .cms-enrollment {
+    padding: 15px;
+  }
+
+  .cms-enrollment-header {
+    flex-direction: column;
+  }
+
+  .cms-enrollment-table {
+    min-width: 720px;
+  }
+}
+
+/* ============================================================
+   CLASSFLOW THEME INTEGRATION
+============================================================ */
+
+.classes-ui .cms-enrollment {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--c-text);
+}
+
+.classes-ui .cms-enrollment-header h2 {
+  color: var(--c-text);
+}
+
+.classes-ui .cms-enrollment-header p,
+.classes-ui .cms-enrollment-toolbar > span,
+.classes-ui .cms-contact,
+.classes-ui .cms-enrollment-pagination {
+  color: var(--c-secondary);
+}
+
+.classes-ui .cms-enrollment-refresh,
+.classes-ui .cms-enrollment-page-actions button,
+.classes-ui .cms-enrollment-error button {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border-color: var(--c-border);
+}
+
+.classes-ui .cms-enrollment-tabs {
+  border-bottom-color: var(--c-border);
+}
+
+.classes-ui .cms-enrollment-tabs button {
+  color: var(--c-secondary);
+}
+
+.classes-ui .cms-enrollment-tabs button.active {
+  color: var(--c-violet);
+  border-bottom-color: var(--c-violet);
+}
+
+.classes-ui .cms-enrollment-toolbar input {
+  background: var(--c-surface);
+  border-color: var(--c-border);
+  color: var(--c-text);
+}
+
+.classes-ui .cms-enrollment-toolbar input::placeholder {
+  color: var(--c-muted);
+}
+
+.classes-ui .cms-enrollment-table th {
+  background: var(--c-elevated);
+  color: var(--c-secondary);
+}
+
+.classes-ui .cms-enrollment-table td {
+  color: var(--c-text);
+}
+
+.classes-ui .cms-enrollment-table th,
+.classes-ui .cms-enrollment-table td {
+  border-bottom-color: var(--c-border);
+}
+
+.classes-ui .cms-enrollment-state {
+  background: var(--c-elevated);
+  color: var(--c-secondary);
+}
+
+.classes-ui .cms-archived {
+  color: #d39430;
+}
+
+/* Dark theme status badges */
+
+.dark-theme .cms-enrollment-badge.is-active {
+  background: #123d2b;
+  color: #7ee2ae;
+}
+
+.dark-theme .cms-enrollment-badge.is-dropped {
+  background: #30303b;
+  color: #d1d1db;
+}
+
+.dark-theme .cms-enrollment-error {
+  background: #3b1c25;
+  color: #fecdd3;
+}

@@ -20,6 +20,8 @@ import {
 
 import { useAuth } from "../../auth/AuthContext";
 
+import ClassEnrollmentList from "../enrollments/ClassEnrollmentList";
+
 import {
   archiveClass,
   createClass,
@@ -300,6 +302,12 @@ export default function ClassesPage() {
     });
   }, [classes, grade, teacher]);
 
+  // ============================================================
+  // SELECTED CLASS FOR ENROLLMENT PANEL
+  // ============================================================
+
+  const selectedClass =
+    filteredClasses.find((item) => item.id === selectedId) ?? null;
   // ==========================================================
   // HANDLERS
   // ==========================================================
@@ -835,6 +843,45 @@ export default function ClassesPage() {
               );
             })}
           </div>
+
+          {/* =====================================================
+    M17.4.2 - CLASS ENROLLMENT PANEL
+===================================================== */}
+
+          {!isArchivedView && selectedClass && token && (
+            <section
+              className="classes-enrollment-section"
+              aria-label={`Enrollments for ${selectedClass.name}`}
+            >
+              <div className="classes-enrollment-section-header">
+                <div>
+                  <span className="classes-enrollment-eyebrow">
+                    CLASS ENROLLMENTS
+                  </span>
+
+                  <h3>{selectedClass.name}</h3>
+
+                  <p>View students enrolled in this class.</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="classes-enrollment-close"
+                  onClick={() => setSelectedId(null)}
+                  aria-label="Close enrollment panel"
+                >
+                  <X size={16} />
+                  Close
+                </button>
+              </div>
+
+              <ClassEnrollmentList
+                key={selectedClass.id}
+                classId={selectedClass.id}
+                token={token}
+              />
+            </section>
+          )}
 
           {/* EMPTY STATE */}
 

@@ -19,7 +19,7 @@ export interface EnrollmentListItem {
 export interface EnrollmentClass {
   id: string;
   name: string;
-  subject: string;
+  subject: string | null;
 }
 
 export interface EnrollmentPagination {
