@@ -418,6 +418,9 @@ export default function StudentsPage() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [studentStatus, setStudentStatus] = useState<"active" | "archived">(
+    "active",
+  );
 
   // ----------------------------------------------------------
   // CREATE / EDIT MODAL
@@ -489,6 +492,7 @@ export default function StudentsPage() {
           page,
           limit: PAGE_SIZE,
           search,
+          status: isAdmin ? studentStatus : "active",
         });
 
         if (cancelled) return;
@@ -512,7 +516,7 @@ export default function StudentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, page, search, refreshKey]);
+  }, [token, page, search, refreshKey, studentStatus, isAdmin]);
 
   // ==========================================================
   // EFFECT 3: LOAD STUDENT DETAIL
@@ -567,8 +571,17 @@ export default function StudentsPage() {
     setRefreshKey((previous) => previous + 1);
   }
 
+  function changeStudentStatus(status: "active" | "archived") {
+    if (!isAdmin && status === "archived") return;
+    setStudentStatus(status);
+    setPage(1);
+    setQuery("");
+    setSearch("");
+    setError("");
+  }
+
   function openCreateModal() {
-    if (!isAdmin) return;
+    if (!isAdmin || studentStatus === "archived") return;
 
     setEditingStudent(null);
     setForm({ ...EMPTY_FORM });
@@ -577,7 +590,7 @@ export default function StudentsPage() {
   }
 
   function openEditModal(student: StudentRecord) {
-    if (!isAdmin) return;
+    if (!isAdmin || student.archivedAt) return;
 
     setEditingStudent(student);
     setForm(toStudentForm(student));
@@ -775,7 +788,7 @@ export default function StudentsPage() {
                 Refresh
               </button>
 
-              {isAdmin && (
+              {isAdmin && studentStatus === "active" && (
                 <button
                   type="button"
                   className="students-btn students-btn-primary"
@@ -787,6 +800,32 @@ export default function StudentsPage() {
               )}
             </div>
           </div>
+
+          {/* ACTIVE / ARCHIVED TABS */}
+          {isAdmin && (
+            <div
+              className="students-status-tabs"
+              role="group"
+              aria-label="Student status filter"
+            >
+              <button
+                type="button"
+                className={`students-status-tab ${studentStatus === "active" ? "is-active" : ""}`}
+                aria-pressed={studentStatus === "active"}
+                onClick={() => changeStudentStatus("active")}
+              >
+                Active Students
+              </button>
+              <button
+                type="button"
+                className={`students-status-tab ${studentStatus === "archived" ? "is-active" : ""}`}
+                aria-pressed={studentStatus === "archived"}
+                onClick={() => changeStudentStatus("archived")}
+              >
+                Archived Students
+              </button>
+            </div>
+          )}
 
           {/* TABLE PANEL */}
 
@@ -861,23 +900,34 @@ export default function StudentsPage() {
                       {students.map((student) => (
                         <tr key={student.id}>
                           <td>
-                            <button
-                              type="button"
-                              className="students-person students-person-link"
-                              onClick={() => openStudentDetail(student)}
-                              aria-label={`View profile of ${student.fullName}`}
-                            >
-                              <StudentAvatar student={student} />
-
-                              <span>
-                                <b>{student.fullName}</b>
-
-                                <small>
-                                  <Mail size={12} />
-                                  {student.email || "No email"}
-                                </small>
-                              </span>
-                            </button>
+                            {student.archivedAt ? (
+                              <div className="students-person">
+                                <StudentAvatar student={student} />
+                                <span>
+                                  <b>{student.fullName}</b>
+                                  <small>
+                                    <Mail size={12} />
+                                    {student.email || "No email"}
+                                  </small>
+                                </span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="students-person students-person-link"
+                                onClick={() => openStudentDetail(student)}
+                                aria-label={`View profile of ${student.fullName}`}
+                              >
+                                <StudentAvatar student={student} />
+                                <span>
+                                  <b>{student.fullName}</b>
+                                  <small>
+                                    <Mail size={12} />
+                                    {student.email || "No email"}
+                                  </small>
+                                </span>
+                              </button>
+                            )}
                           </td>
 
                           <td className="students-muted">
@@ -902,23 +952,27 @@ export default function StudentsPage() {
                           </td>
 
                           <td>
-                            <span className="students-status students-status-active">
+                            <span
+                              className={`students-status ${student.archivedAt ? "students-status-archived" : "students-status-active"}`}
+                            >
                               <i />
-                              Active
+                              {student.archivedAt ? "Archived" : "Active"}
                             </span>
                           </td>
 
                           {isAdmin && (
                             <td>
-                              <button
-                                type="button"
-                                className="students-icon-btn"
-                                aria-label={`Edit ${student.fullName}`}
-                                title="Edit student"
-                                onClick={() => openEditModal(student)}
-                              >
-                                <Pencil size={17} />
-                              </button>
+                              {!student.archivedAt && (
+                                <button
+                                  type="button"
+                                  className="students-icon-btn"
+                                  aria-label={`Edit ${student.fullName}`}
+                                  title="Edit student"
+                                  onClick={() => openEditModal(student)}
+                                >
+                                  <Pencil size={17} />
+                                </button>
+                              )}
                             </td>
                           )}
                         </tr>
@@ -933,9 +987,11 @@ export default function StudentsPage() {
                       <p>
                         {search
                           ? "Try another name or student code."
-                          : isAdmin
-                            ? "No active students have been added yet."
-                            : "No students are assigned to your classes."}
+                          : isAdmin && studentStatus === "archived"
+                            ? "No archived students found."
+                            : isAdmin
+                              ? "No active students have been added yet."
+                              : "No students are assigned to your classes."}
                       </p>
                     </div>
                   )}

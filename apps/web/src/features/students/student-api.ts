@@ -70,18 +70,22 @@ export type UpdateStudentInput = Partial<
   Omit<CreateStudentInput, "studentCode">
 >;
 
+export type StudentListStatus = "active" | "archived";
+
 export function getStudents(
   token: string,
   params: {
     page?: number;
     limit?: number;
     search?: string;
+    status?: StudentListStatus;
   } = {},
 ): Promise<StudentListResponse> {
   const query = new URLSearchParams({
     page: String(params.page ?? 1),
     limit: String(params.limit ?? 20),
   });
+  query.set("status", params.status ?? "active");
 
   if (params.search?.trim()) {
     query.set("search", params.search.trim());

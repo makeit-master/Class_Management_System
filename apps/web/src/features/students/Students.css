@@ -987,3 +987,52 @@
     width: 100%;
   }
 }
+
+/* M16.5.3 - Active / Archived tabs */
+.students-status-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.students-status-tab {
+  padding: 10px 17px;
+  border: 1px solid rgba(128, 128, 145, 0.25);
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 0.2s,
+    border-color 0.2s;
+}
+.students-status-tab:hover {
+  opacity: 1;
+  border-color: #8056e9;
+}
+.students-status-tab.is-active {
+  background: rgba(128, 86, 233, 0.12);
+  color: #8056e9;
+  border-color: #8056e9;
+  opacity: 1;
+}
+.students-status-tab:focus-visible {
+  outline: 2px solid #8056e9;
+  outline-offset: 3px;
+}
+.students-status-archived {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(128, 128, 145, 0.12);
+  color: inherit;
+  opacity: 0.7;
+}
+.students-status-archived i {
+  background: #92929f;
+}
