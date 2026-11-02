@@ -4,14 +4,13 @@ import {
   Check,
   CheckCheck,
   ClipboardCheck,
-  Clock3,
   Download,
   Search,
   UsersRound,
 } from "lucide-react";
 import "./Attendance.css";
 
-type AttendanceStatus = "Present" | "Absent" | "Late";
+type AttendanceStatus = "Present" | "Absent";
 type Student = {
   id: string;
   name: string;
@@ -80,7 +79,7 @@ const students: Student[] = [
 ];
 
 const classOptions = [...new Set(students.map((student) => student.className))];
-const statusOptions: AttendanceStatus[] = ["Present", "Absent", "Late"];
+const statusOptions: AttendanceStatus[] = ["Present", "Absent"];
 
 function localDate() {
   const now = new Date();
@@ -174,9 +173,6 @@ export default function AttendancePage() {
       (student) => getStatus(student.id) === "Absent",
     ).length,
 
-    Late: classStudents.filter((student) => getStatus(student.id) === "Late")
-      .length,
-
     Unmarked: classStudents.filter(
       (student) => getStatus(student.id) === undefined,
     ).length,
@@ -260,12 +256,6 @@ export default function AttendancePage() {
               color: "red",
               icon: UsersRound,
               value: totals.Absent,
-            },
-            {
-              title: "Late",
-              color: "orange",
-              icon: Clock3,
-              value: totals.Late,
             },
           ] as const
         ).map((item) => (

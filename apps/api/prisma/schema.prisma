@@ -27,8 +27,6 @@ enum SessionStatus {
 enum AttendanceStatus {
   PRESENT
   ABSENT
-  LATE
-  EXCUSED
 }
 
 enum StudentGender {
