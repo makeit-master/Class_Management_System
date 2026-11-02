@@ -591,3 +591,68 @@
     padding: 20px;
   }
 }
+
+/* M16.3.2 - Real student list refinements */
+
+.students-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-align: left;
+}
+
+.students-person > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.students-person b {
+  overflow-wrap: anywhere;
+}
+
+.students-person small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary, #8c8c9c);
+  overflow-wrap: anywhere;
+}
+
+.students-table {
+  width: 100%;
+}
+
+.students-table th,
+.students-table td {
+  vertical-align: middle;
+}
+
+.students-table th {
+  white-space: nowrap;
+}
+
+.students-empty {
+  text-align: center;
+  padding: 36px 20px;
+}
+
+.students-empty > svg {
+  margin-bottom: 12px;
+}
+
+.students-empty h3 {
+  margin: 10px 0 6px;
+}
+
+.students-empty p {
+  margin: 8px 0 16px;
+}
+
+.students-empty .students-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
