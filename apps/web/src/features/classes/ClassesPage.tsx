@@ -15,6 +15,7 @@ import {
   X,
   Archive,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
 import { useAuth } from "../../auth/AuthContext";
@@ -26,6 +27,7 @@ import {
   getTeacherOptions,
   updateClass,
   getArchivedClasses,
+  restoreClass,
   type ClassRecord,
   type ClassListResponse,
   type TeacherOption,
@@ -158,6 +160,16 @@ export default function ClassesPage() {
   const [archiving, setArchiving] = useState(false);
 
   const [archiveError, setArchiveError] = useState("");
+
+  // ==========================================================
+  // RESTORE CLASS STATE
+  // ==========================================================
+
+  const [restoreTarget, setRestoreTarget] = useState<ClassRecord | null>(null);
+
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   // ==========================================================
   // EFFECT 1: DEBOUNCED SEARCH
@@ -353,6 +365,20 @@ export default function ClassesPage() {
     setSelectedId(null);
   }
 
+  function openRestoreModal(item: ClassRecord) {
+    if (!isAdmin || !isArchivedView) return;
+
+    setRestoreTarget(item);
+    setRestoreError(null);
+  }
+
+  function closeRestoreModal() {
+    if (isRestoring) return;
+
+    setRestoreTarget(null);
+    setRestoreError(null);
+  }
+
   async function handleSubmitClass(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -473,6 +499,38 @@ export default function ClassesPage() {
       setArchiveError(getErrorMessage(caught, "Unable to archive this class."));
     } finally {
       setArchiving(false);
+    }
+  }
+
+  async function handleRestoreClass() {
+    if (
+      !token ||
+      !isAdmin ||
+      !isArchivedView ||
+      !restoreTarget ||
+      isRestoring
+    ) {
+      return;
+    }
+
+    setIsRestoring(true);
+    setRestoreError(null);
+
+    try {
+      await restoreClass(token, restoreTarget.id);
+
+      // Close confirmation modal.
+      setRestoreTarget(null);
+
+      // Reload the list from the database.
+      setPage(1);
+      setRefreshKey((previous) => previous + 1);
+    } catch (error) {
+      setRestoreError(
+        error instanceof Error ? error.message : "Failed to restore class.",
+      );
+    } finally {
+      setIsRestoring(false);
     }
   }
 
@@ -719,10 +777,6 @@ export default function ClassesPage() {
                   )}
 
                   {/* Class actions */}
-
-                  {/* Class actions */}
-
-                  {/* Class actions */}
                   <div className="classes-card-actions">
                     <button
                       type="button"
@@ -736,6 +790,7 @@ export default function ClassesPage() {
                       <ArrowRight size={16} />
                     </button>
 
+                    {/* Active: Edit and Archive */}
                     {isAdmin && !isArchivedView && (
                       <div className="classes-admin-actions">
                         <button
@@ -759,6 +814,22 @@ export default function ClassesPage() {
                         </button>
                       </div>
                     )}
+
+                    {/* Archived: Restore only */}
+                    {isAdmin && isArchivedView && (
+                      <div className="classes-admin-actions">
+                        <button
+                          type="button"
+                          className="classes-restore-button"
+                          onClick={() => openRestoreModal(item)}
+                          title={`Restore ${item.name}`}
+                          aria-label={`Restore ${item.name}`}
+                        >
+                          <RotateCcw size={16} />
+                          <span>Restore</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </article>
               );
@@ -774,7 +845,9 @@ export default function ClassesPage() {
 
               <p>
                 {classes.length === 0
-                  ? "There are no active classes matching your search."
+                  ? isArchivedView
+                    ? "There are no archived classes matching your search."
+                    : "There are no active classes matching your search."
                   : "Try another grade or teacher filter."}
               </p>
             </div>
@@ -1031,6 +1104,69 @@ export default function ClassesPage() {
               </button>
             </div>
           </section>
+        </div>
+      )}
+
+      {/* RESTORE CLASS CONFIRMATION */}
+      {restoreTarget && (
+        <div
+          className="classes-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeRestoreModal();
+            }
+          }}
+        >
+          <div
+            className="classes-restore-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restore-class-title"
+          >
+            <div className="classes-restore-icon">
+              <RotateCcw size={22} />
+            </div>
+
+            <h2 id="restore-class-title">Restore Class?</h2>
+
+            <p>
+              Are you sure you want to restore{" "}
+              <strong>{restoreTarget.name}</strong>?
+            </p>
+
+            <div className="classes-restore-note">
+              This class will return to the Active Classes list. Its existing
+              information will be preserved.
+            </div>
+
+            {restoreError && (
+              <p className="classes-restore-error" role="alert">
+                {restoreError}
+              </p>
+            )}
+
+            <div className="classes-restore-actions">
+              <button
+                type="button"
+                className="classes-archive-cancel"
+                onClick={closeRestoreModal}
+                disabled={isRestoring}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="classes-restore-confirm"
+                onClick={handleRestoreClass}
+                disabled={isRestoring}
+              >
+                <RotateCcw size={16} />
+                {isRestoring ? "Restoring..." : "Restore Class"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

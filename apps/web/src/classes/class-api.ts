@@ -148,3 +148,22 @@ export async function getArchivedClasses(
     token,
   });
 }
+
+/**
+ * M15.6.3 - Restore archived class
+ *
+ * PATCH /api/classes/:id/restore
+ * Access: ADMIN only
+ */
+export async function restoreClass(
+  token: string,
+  classId: string,
+): Promise<ClassRecord> {
+  return apiClient<ClassRecord>(
+    `/classes/${encodeURIComponent(classId)}/restore`,
+    {
+      method: "PATCH",
+      token,
+    },
+  );
+}
