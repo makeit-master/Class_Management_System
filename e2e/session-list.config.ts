@@ -4,7 +4,11 @@ import { defineConfig, devices } from "@playwright/test";
 // The real database is not used by either spec.
 export default defineConfig({
   testDir: ".",
-  testMatch: ["session-list.spec.ts", "attendance-workflow.spec.ts"],
+  testMatch: [
+    "session-list.spec.ts",
+    "attendance-workflow.spec.ts",
+    "monthly-reports.spec.ts",
+  ],
   use: { baseURL: "http://127.0.0.1:5184", ...devices["Desktop Chrome"] },
   webServer: {
     command:

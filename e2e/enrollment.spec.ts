@@ -5,7 +5,7 @@ import {
   type Page,
 } from "@playwright/test";
 
-const API_URL = "http://127.0.0.1:3000/api";
+const API_URL = process.env.E2E_API_URL || "http://127.0.0.1:3000/api";
 
 type EnrollmentItem = {
   id: string;
@@ -246,11 +246,19 @@ test("ADMIN completes Enroll, Drop and Re-enroll lifecycle", async ({
       })
       .click();
 
-    await page
-      .getByRole("textbox", {
-        name: "Search classes",
-      })
-      .fill(className);
+    // Wait for the debounced search before opening details. Its state update
+    // intentionally closes the previously selected enrollment panel.
+    await Promise.all([
+      page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          url.pathname === "/api/classes" &&
+          url.searchParams.get("search") === className &&
+          response.ok()
+        );
+      }),
+      page.getByRole("textbox", { name: "Search classes" }).fill(className),
+    ]);
 
     const classCard = page.locator(".classes-card").filter({
       has: page.getByRole("heading", {
@@ -437,6 +445,9 @@ test("ADMIN completes Enroll, Drop and Re-enroll lifecycle", async ({
       })
       .click();
 
+    await page
+      .getByRole("button", { name: "Enrollments", exact: true })
+      .click();
     await expect(page.locator(".student-detail-class-list")).toContainText(
       className,
     );
