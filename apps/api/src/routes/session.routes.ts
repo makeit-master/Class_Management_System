@@ -843,3 +843,167 @@ sessionRouter.patch(
     }
   },
 );
+
+/**
+ * M18.3.2 - GET Session Attendance
+ *
+ * GET /api/sessions/:id/attendance
+ *
+ * ADMIN: All active classes
+ * TEACHER: Assigned classes only
+ */
+sessionRouter.get(
+  "/sessions/:id/attendance",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      // 1. Validate session ID.
+      const parsedId = uuidSchema.safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
+        return;
+      }
+
+      const prisma = getPrisma();
+      const currentUser = req.authUser!;
+
+      // 2. Find session and its class.
+      const session = await prisma.classSession.findUnique({
+        where: {
+          id: parsedId.data,
+        },
+        select: {
+          id: true,
+          classId: true,
+          startsAt: true,
+          endsAt: true,
+          status: true,
+          class: {
+            select: {
+              id: true,
+              name: true,
+              teacherId: true,
+              archivedAt: true,
+            },
+          },
+        },
+      });
+
+      if (!session || session.class.archivedAt !== null) {
+        sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
+        return;
+      }
+
+      // 3. Verify teacher ownership.
+      if (
+        currentUser.role === "TEACHER" &&
+        session.class.teacherId !== currentUser.teacherId
+      ) {
+        sendError(res, 403, "FORBIDDEN", "Access denied.");
+        return;
+      }
+
+      // 4. Find enrollments eligible at session start.
+      // Historical participation is determined by
+      // EnrollmentPeriod, not current Enrollment.status.
+      const enrollments = await prisma.enrollment.findMany({
+        where: {
+          classId: session.classId,
+          periods: {
+            some: {
+              startedAt: {
+                lte: session.startsAt,
+              },
+              OR: [
+                {
+                  endedAt: null,
+                },
+                {
+                  endedAt: {
+                    gt: session.startsAt,
+                  },
+                },
+              ],
+            },
+          },
+        },
+        select: {
+          id: true,
+          studentId: true,
+          student: {
+            select: {
+              id: true,
+              studentCode: true,
+              fullName: true,
+            },
+          },
+          attendance: {
+            where: {
+              sessionId: session.id,
+            },
+            select: {
+              status: true,
+              note: true,
+              markedAt: true,
+            },
+          },
+        },
+        orderBy: {
+          student: {
+            fullName: "asc",
+          },
+        },
+      });
+
+      // 5. Build attendance list.
+      const students = enrollments.map((enrollment) => {
+        const attendance = enrollment.attendance[0];
+
+        return {
+          enrollmentId: enrollment.id,
+          studentId: enrollment.studentId,
+          studentCode: enrollment.student.studentCode,
+          fullName: enrollment.student.fullName,
+          attendanceStatus: attendance?.status ?? null,
+          note: attendance?.note ?? null,
+          markedAt: attendance?.markedAt ?? null,
+        };
+      });
+
+      // 6. Calculate summary.
+      const summary = {
+        present: students.filter(
+          (student) => student.attendanceStatus === "PRESENT",
+        ).length,
+
+        absent: students.filter(
+          (student) => student.attendanceStatus === "ABSENT",
+        ).length,
+
+        unmarked: students.filter(
+          (student) => student.attendanceStatus === null,
+        ).length,
+      };
+
+      // 7. Response.
+      res.status(200).json({
+        success: true,
+        data: {
+          session: {
+            id: session.id,
+            classId: session.classId,
+            className: session.class.name,
+            startsAt: session.startsAt,
+            endsAt: session.endsAt,
+            status: session.status,
+          },
+          students,
+          summary,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
