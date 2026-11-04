@@ -49,6 +49,7 @@ export const pagePermissions: Record<string, AppPermission> = {
   Students: "students:view",
   Teachers: "teachers:manage",
   Attendance: "attendance:view",
+  Reports: "attendance:view",
   Grades: "grades:view",
   Schedule: "schedule:view",
   Settings: "settings:manage",

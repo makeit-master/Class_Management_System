@@ -9,6 +9,7 @@ import {
   GraduationCap,
   CheckCheck,
   TrendingUp,
+  BarChart3,
   Settings,
   LogOut,
   Moon,
@@ -47,6 +48,7 @@ const groups = [
     title: "ACADEMIC",
     items: [
       { label: "Attendance", icon: CheckCheck },
+      { label: "Reports", icon: BarChart3 },
       { label: "Grades", icon: TrendingUp },
       { label: "Schedule", icon: CalendarDays },
     ],

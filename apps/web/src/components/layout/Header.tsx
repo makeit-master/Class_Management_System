@@ -30,6 +30,7 @@ const subtitles: Record<string, string> = {
   "Student Detail": "A closer look at your student’s learning journey.",
   Teachers: "Meet the people making a difference.",
   Attendance: "Every day counts. Keep track of who’s here.",
+  Reports: "Monthly attendance and tuition at a glance.",
   Grades: "Turn progress into possibility.",
   Schedule: "A clear view of the week ahead.",
   Settings: "Make ClassFlow work your way.",

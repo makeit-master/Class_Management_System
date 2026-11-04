@@ -6,6 +6,7 @@ import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
 import TeachersPage from "../../features/teachers/TeachersPage";
 import SessionListPage from "../../features/attendance/SessionListPage";
+import ReportsPage from "../../features/reports/ReportsPage";
 import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
 import SettingsPage from "../../features/settings/SettingsPage";
@@ -90,6 +91,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       case "Attendance":
         return <SessionListPage />;
+
+      case "Reports":
+        return <ReportsPage />;
 
       case "Grades":
         return <GradesPage />;
