@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { compare } from "bcryptjs";
 import { rateLimit } from "express-rate-limit";
@@ -12,10 +11,7 @@ export const authRouter = Router();
 
 const loginSchema = z
   .object({
-    email: z
-      .email()
-      .max(254)
-      .transform((value) => value.trim().toLowerCase()),
+    email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
     password: z.string().min(1).max(1024),
   })
   .strict();
@@ -74,6 +70,7 @@ authRouter.post("/login", loginLimiter, async (req, res, next) => {
 
     if (
       !user ||
+      !user.isActive ||
       !user.passwordHash ||
       !validPassword ||
       (user.role !== "TEACHER" && user.role !== "ADMIN")
@@ -88,10 +85,7 @@ authRouter.post("/login", loginLimiter, async (req, res, next) => {
       return;
     }
 
-    const token = await issueAccessToken(
-      user.id,
-      user.role,
-    );
+    const token = await issueAccessToken(user.id, user.role);
 
     res.setHeader("Cache-Control", "no-store");
 
