@@ -1242,3 +1242,241 @@ sessionRouter.put(
     }
   },
 );
+
+/**
+ * M18.3.4 - Complete Session
+ *
+ * PATCH /api/sessions/:id/complete
+ *
+ * ADMIN: All classes
+ * TEACHER: Assigned classes only
+ */
+sessionRouter.patch(
+  "/sessions/:id/complete",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const parsedId = uuidSchema.safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
+        return;
+      }
+
+      const currentUser = req.authUser!;
+
+      if (currentUser.role !== "ADMIN" && currentUser.role !== "TEACHER") {
+        sendError(res, 403, "FORBIDDEN", "Access denied.");
+        return;
+      }
+
+      const prisma = getPrisma();
+      const sessionId = parsedId.data;
+
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // 1. Find session.
+          const session = await tx.classSession.findUnique({
+            where: { id: sessionId },
+            select: {
+              id: true,
+              classId: true,
+              startsAt: true,
+              status: true,
+              class: {
+                select: {
+                  teacherId: true,
+                  archivedAt: true,
+                },
+              },
+            },
+          });
+
+          if (!session || session.class.archivedAt !== null) {
+            return { kind: "NOT_FOUND" } as const;
+          }
+
+          // 2. Check permissions.
+          if (
+            currentUser.role === "TEACHER" &&
+            session.class.teacherId !== currentUser.teacherId
+          ) {
+            return { kind: "FORBIDDEN" } as const;
+          }
+
+          // 3. Only SCHEDULED sessions can be completed.
+          if (session.status !== "SCHEDULED") {
+            return { kind: "INVALID_STATUS" } as const;
+          }
+
+          // 4. Find students eligible at session start.
+          const enrollments = await tx.enrollment.findMany({
+            where: {
+              classId: session.classId,
+              periods: {
+                some: {
+                  startedAt: {
+                    lte: session.startsAt,
+                  },
+                  OR: [
+                    { endedAt: null },
+                    {
+                      endedAt: {
+                        gt: session.startsAt,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            select: {
+              id: true,
+              attendance: {
+                where: {
+                  sessionId,
+                },
+                select: {
+                  status: true,
+                },
+              },
+            },
+          });
+
+          // 5. Do not complete an empty class.
+          if (enrollments.length === 0) {
+            return { kind: "NO_STUDENTS" } as const;
+          }
+
+          // 6. Count marked and unmarked students.
+          let present = 0;
+          let absent = 0;
+          let unmarked = 0;
+
+          for (const enrollment of enrollments) {
+            const attendance = enrollment.attendance[0];
+
+            if (!attendance) {
+              unmarked++;
+            } else if (attendance.status === "PRESENT") {
+              present++;
+            } else if (attendance.status === "ABSENT") {
+              absent++;
+            }
+          }
+
+          if (unmarked > 0) {
+            return {
+              kind: "UNMARKED_STUDENTS",
+              unmarked,
+            } as const;
+          }
+
+          // 7. Complete session conditionally.
+          const updated = await tx.classSession.updateMany({
+            where: {
+              id: sessionId,
+              status: "SCHEDULED",
+            },
+            data: {
+              status: "COMPLETED",
+            },
+          });
+
+          if (updated.count !== 1) {
+            return { kind: "SESSION_CHANGED" } as const;
+          }
+
+          return {
+            kind: "SUCCESS",
+            sessionId,
+            classId: session.classId,
+            status: "COMPLETED",
+            summary: {
+              present,
+              absent,
+              unmarked: 0,
+            },
+          } as const;
+        },
+        {
+          isolationLevel: "Serializable",
+        },
+      );
+
+      // 8. Handle business errors.
+      switch (result.kind) {
+        case "NOT_FOUND":
+          sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
+          return;
+
+        case "FORBIDDEN":
+          sendError(res, 403, "FORBIDDEN", "Access denied.");
+          return;
+
+        case "INVALID_STATUS":
+          sendError(
+            res,
+            409,
+            "INVALID_SESSION_STATUS",
+            "Only scheduled sessions can be completed.",
+          );
+          return;
+
+        case "NO_STUDENTS":
+          sendError(
+            res,
+            409,
+            "NO_ELIGIBLE_STUDENTS",
+            "Cannot complete a session without eligible students.",
+          );
+          return;
+
+        case "UNMARKED_STUDENTS":
+          sendError(
+            res,
+            409,
+            "ATTENDANCE_INCOMPLETE",
+            `${result.unmarked} student(s) have not been marked.`,
+          );
+          return;
+
+        case "SESSION_CHANGED":
+          sendError(
+            res,
+            409,
+            "SESSION_STATE_CONFLICT",
+            "Session status has changed.",
+          );
+          return;
+      }
+
+      // 9. Success response.
+      res.status(200).json({
+        success: true,
+        data: {
+          sessionId: result.sessionId,
+          classId: result.classId,
+          status: result.status,
+          summary: result.summary,
+        },
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2034"
+      ) {
+        sendError(
+          res,
+          409,
+          "SESSION_STATE_CONFLICT",
+          "Concurrent update detected. Please retry.",
+        );
+        return;
+      }
+
+      next(error);
+    }
+  },
+);
