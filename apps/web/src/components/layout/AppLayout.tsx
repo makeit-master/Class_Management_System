@@ -1,3 +1,4 @@
+import RegistrationReview from "../../pages/RegistrationReview";
 import { confirmAttendanceNavigation } from "../../lib/unsaved-changes";
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
@@ -77,7 +78,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     switch (activePage) {
       case "Dashboard":
         return (
-          <DashboardPage navigate={handleNavigate} notify={handleNotify} />
+          <>
+            <RegistrationReview />
+            <DashboardPage navigate={handleNavigate} notify={handleNotify} />
+          </>
         );
 
       case "Classes":

@@ -1,0 +1,37 @@
+.registration-reviews {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.registration-reviews article {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.registration-reviews dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.registration-reviews dt {
+  color: var(--secondary);
+}
+.registration-reviews dd {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.registration-reviews button {
+  padding: 10px 16px;
+  margin: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.registration-reviews button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
