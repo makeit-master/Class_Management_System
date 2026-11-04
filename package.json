@@ -13,6 +13,7 @@
     "dev:api": "npm run dev --workspace=@cms/api",
     "build": "npm run build --workspace=@cms/web",
     "lint": "npm run lint --workspace=@cms/web",
+    "test:regression:attendance": "node scripts/tests/run-attendance.cjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
