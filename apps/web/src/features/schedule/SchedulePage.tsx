@@ -1,3 +1,4 @@
+import PageToolbar from "../../components/ui/PageToolbar";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import "./Schedule.css";
@@ -21,8 +22,7 @@ const shift = (d: Date, n: number) =>
 const monday = (d: Date) => shift(d, -((d.getDay() + 6) % 7));
 const pretty = (d: Date, options: Intl.DateTimeFormatOptions) =>
   d.toLocaleDateString("en-GB", options);
-const minutes = (time: string) =>
-  Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+
 function seed(today: Date): Lesson[] {
   const start = monday(today);
   return Array.from({ length: 18 }, (_, i) => ({
@@ -105,10 +105,17 @@ export default function SchedulePage() {
   const visible = filtered.filter((l) =>
     days.some((d) => dateKey(d) === l.date),
   );
-  const weekLessons = lessons.filter(
-    (l) =>
-      l.date >= dateKey(monday(cursor)) &&
-      l.date <= dateKey(shift(monday(cursor), 6)),
+  const firstHour = Math.min(
+    7,
+    ...visible.map((lesson) => Number(lesson.start.slice(0, 2))),
+  );
+  const lastHour = Math.max(
+    17,
+    ...visible.map((lesson) => Number(lesson.start.slice(0, 2))),
+  );
+  const hours = Array.from(
+    { length: lastHour - firstHour + 1 },
+    (_, index) => firstHour + index,
   );
   function navigate(direction: number) {
     setCursor((d) =>
@@ -172,14 +179,20 @@ export default function SchedulePage() {
   }
   return (
     <section className="sc-page" aria-label="Teaching schedule">
-      <header className="sc-heading">
-        <div>
-          <div className="sc-eyebrow">CLASSFLOW / TEACHING</div>
-          <h1>
-            Teaching schedule<span>✦</span>
-          </h1>
-          <p>A little structure. More room to inspire.</p>
-        </div>
+      <PageToolbar
+        title={
+          view === "Week"
+            ? [days[0], days[6]]
+                .map((day) => pretty(day, { day: "numeric", month: "short" }))
+                .join(" – ")
+            : pretty(cursor, {
+                month: "long",
+                ...(view === "Day" && { day: "numeric" }),
+                year: "numeric",
+              })
+        }
+        subtitle="Make room for great things."
+      >
         <button
           className="sc-primary"
           onClick={() => {
@@ -189,184 +202,142 @@ export default function SchedulePage() {
         >
           ＋ Add lesson
         </button>
-      </header>
-      <div className="sc-stats">
-        <article>
-          <span>LESSONS THIS WEEK</span>
-          <strong>
-            {weekLessons.length}
-            <small>scheduled sessions</small>
-          </strong>
-        </article>
-        <article>
-          <span>TEACHING HOURS</span>
-          <strong>
-            {(
-              weekLessons.reduce(
-                (sum, l) => sum + minutes(l.end) - minutes(l.start),
-                0,
-              ) / 60
-            ).toLocaleString()}
-            <small>hours this week</small>
-          </strong>
-        </article>
-        <article>
-          <span>ACTIVE CLASSES</span>
-          <strong>
-            {new Set(weekLessons.map((l) => l.group)).size}
-            <small>classes to inspire</small>
-          </strong>
-        </article>
-      </div>
-      <div className="sc-workspace">
-        <div className="sc-calendar">
-          <div className="sc-toolbar">
-            <div className="sc-period">
-              <button aria-label="Previous period" onClick={() => navigate(-1)}>
-                ‹
-              </button>
-              <button aria-label="Next period" onClick={() => navigate(1)}>
-                ›
-              </button>
-              <h2>{pretty(cursor, { month: "long", year: "numeric" })}</h2>
-              <button onClick={() => setCursor(new Date())}>Today</button>
-            </div>
-            <div className="sc-tabs" role="group" aria-label="Calendar view">
-              {(["Day", "Week", "Month"] as View[]).map((v) => (
-                <button
-                  key={v}
-                  aria-pressed={view === v}
-                  onClick={() => setView(v)}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="sc-filters">
-            <label>
-              <span className="sc-sr">Search lessons</span>
-              <input
-                type="search"
-                placeholder="Search lessons, rooms…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-            <label>
-              <span className="sc-sr">Filter class</span>
-              <select value={group} onChange={(e) => setGroup(e.target.value)}>
-                {["All classes", ...groups].map((g) => (
-                  <option key={g}>{g}</option>
-                ))}
-              </select>
-            </label>
-            <span>{visible.length} lessons in view</span>
-          </div>
-          <div
-            className={`sc-grid sc-${view.toLowerCase()}`}
-            aria-label={`${view} calendar`}
-          >
-            {days.map((day) => {
-              const key = dateKey(day);
-              const entries = visible
-                .filter((l) => l.date === key)
-                .sort((a, b) => a.start.localeCompare(b.start));
-              return (
-                <div
-                  key={key}
-                  className={`sc-day-cell ${day.getMonth() !== cursor.getMonth() ? "sc-outside" : ""}`}
-                >
-                  <div className="sc-day-label">
-                    <span>{pretty(day, { weekday: "short" })}</span>
-                    <button
-                      className={key === dateKey(today) ? "sc-today" : ""}
-                      aria-label={`View ${pretty(day, { dateStyle: "full" })}`}
-                      onClick={() => {
-                        setCursor(day);
-                        setView("Day");
-                      }}
-                    >
-                      {day.getDate()}
-                    </button>
-                  </div>
-                  <div className="sc-day-lessons">
-                    {entries.map(lessonButton)}
-                    {entries.length === 0 && view !== "Month" && (
-                      <span className="sc-free">
-                        No lessons
-                        <br />
-                        <small>Room to recharge</small>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {visible.length === 0 && (
-            <p className="sc-empty" role="status">
-              No lessons match this period or your filters.
-            </p>
-          )}
-          <footer className="sc-legend">
-            {groups.map((g, i) => (
-              <span key={g}>
-                <i className={`sc-dot sc-dot-${i}`} />
-                {g}
-              </span>
-            ))}
-          </footer>
+        <div className="sc-period">
+          <button aria-label="Previous period" onClick={() => navigate(-1)}>
+            ‹
+          </button>
+          <button aria-label="Next period" onClick={() => navigate(1)}>
+            ›
+          </button>
+          <button onClick={() => setCursor(new Date())}>Today</button>
         </div>
-        <aside className="sc-aside">
-          <div className="sc-note">
-            <span className="sc-eyebrow">YOUR WEEK, AT A GLANCE</span>
-            <h2>
-              Make time for
-              <br />
-              great teaching.
-            </h2>
-            <p>
-              Plan your sessions, find your classroom, and keep every class on
-              track.
-            </p>
-            <div className="sc-art" aria-hidden="true">
-              ▦<span>✦</span>
-            </div>
-          </div>
-          <div className="sc-upcoming">
-            <h2>Coming up</h2>
-            <p>From {pretty(today, { day: "numeric", month: "short" })}</p>
-            {filtered
-              .filter(
-                (l) =>
-                  l.date > dateKey(today) ||
-                  (l.date === dateKey(today) &&
-                    l.end >=
-                      `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`),
-              )
-              .sort((a, b) =>
-                `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`),
-              )
-              .slice(0, 3)
-              .map((l) => (
-                <button key={l.id} onClick={() => setSelected(l)}>
-                  <span>
-                    {pretty(new Date(`${l.date}T12:00:00`), {
-                      day: "numeric",
-                      month: "short",
-                    })}{" "}
-                    · {l.start}
-                  </span>
-                  <strong>{l.title}</strong>
-                  <small>{l.room}</small>
-                </button>
+        <div className="sc-tabs" role="group" aria-label="Calendar view">
+          {(["Day", "Week", "Month"] as View[]).map((v) => (
+            <button
+              key={v}
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </PageToolbar>
+      <div className="sc-calendar">
+        <div className="sc-filters">
+          <label>
+            <span className="sc-sr">Search lessons</span>
+            <input
+              type="search"
+              placeholder="Search lessons, rooms…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="sc-sr">Filter class</span>
+            <select value={group} onChange={(e) => setGroup(e.target.value)}>
+              {["All classes", ...groups].map((g) => (
+                <option key={g}>{g}</option>
               ))}
-            {!filtered.some((l) => l.date >= dateKey(today)) && (
-              <p>No upcoming lessons.</p>
-            )}
-          </div>
-        </aside>
+            </select>
+          </label>
+          <span>{visible.length} lessons in view</span>
+        </div>
+        <div className="sc-calendar-scroll">
+          {view !== "Month" ? (
+            <div
+              className={`time-grid ${view.toLowerCase()}`}
+              aria-label={`${view} calendar`}
+            >
+              <span className="time-hour">Time</span>
+              {days.map((day) => (
+                <div className="sc-day-label" key={dateKey(day)}>
+                  <span>{pretty(day, { weekday: "short" })}</span>
+                  <button
+                    className={
+                      dateKey(day) === dateKey(today) ? "sc-today" : ""
+                    }
+                    aria-label={`View ${pretty(day, { dateStyle: "full" })}`}
+                    onClick={() => {
+                      setCursor(day);
+                      setView("Day");
+                    }}
+                  >
+                    {day.getDate()}
+                  </button>
+                </div>
+              ))}
+              {hours.map((hour) => (
+                <div className="time-row" key={hour}>
+                  <span className="time-hour">
+                    {String(hour).padStart(2, "0")}:00
+                  </span>
+                  {days.map((day) => (
+                    <div className="time-slot" key={dateKey(day)}>
+                      {visible
+                        .filter(
+                          (lesson) =>
+                            lesson.date === dateKey(day) &&
+                            Number(lesson.start.slice(0, 2)) === hour,
+                        )
+                        .sort((a, b) => a.start.localeCompare(b.start))
+                        .map(lessonButton)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className={`sc-grid sc-${view.toLowerCase()}`}
+              aria-label={`${view} calendar`}
+            >
+              {days.map((day) => {
+                const key = dateKey(day);
+                const entries = visible
+                  .filter((l) => l.date === key)
+                  .sort((a, b) => a.start.localeCompare(b.start));
+                return (
+                  <div
+                    key={key}
+                    className={`sc-day-cell ${day.getMonth() !== cursor.getMonth() ? "sc-outside" : ""}`}
+                  >
+                    <div className="sc-day-label">
+                      <span>{pretty(day, { weekday: "short" })}</span>
+                      <button
+                        className={key === dateKey(today) ? "sc-today" : ""}
+                        aria-label={`View ${pretty(day, { dateStyle: "full" })}`}
+                        onClick={() => {
+                          setCursor(day);
+                          setView("Day");
+                        }}
+                      >
+                        {day.getDate()}
+                      </button>
+                    </div>
+                    <div className="sc-day-lessons">
+                      {entries.map(lessonButton)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {visible.length === 0 && (
+          <p className="sc-empty" role="status">
+            No lessons match this period or your filters.
+          </p>
+        )}
+        <footer className="sc-legend">
+          {groups.map((g, i) => (
+            <span key={g}>
+              <i className={`sc-dot sc-dot-${i}`} />
+              {g}
+            </span>
+          ))}
+        </footer>
       </div>
       <p className="sc-demo">Mock data · Changes last for this session only.</p>
       <p className="sc-status" role="status">

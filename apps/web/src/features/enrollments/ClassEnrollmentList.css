@@ -208,68 +208,68 @@
   padding: 0;
   background: transparent;
   border: none;
-  color: var(--c-text);
+  color: var(--text);
 }
 
 .classes-ui .cms-enrollment-header h2 {
-  color: var(--c-text);
+  color: var(--text);
 }
 
 .classes-ui .cms-enrollment-header p,
 .classes-ui .cms-enrollment-toolbar > span,
 .classes-ui .cms-contact,
 .classes-ui .cms-enrollment-pagination {
-  color: var(--c-secondary);
+  color: var(--secondary);
 }
 
 .classes-ui .cms-enrollment-refresh,
 .classes-ui .cms-enrollment-page-actions button,
 .classes-ui .cms-enrollment-error button {
-  background: var(--c-surface);
-  color: var(--c-text);
-  border-color: var(--c-border);
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .classes-ui .cms-enrollment-tabs {
-  border-bottom-color: var(--c-border);
+  border-bottom-color: var(--border);
 }
 
 .classes-ui .cms-enrollment-tabs button {
-  color: var(--c-secondary);
+  color: var(--secondary);
 }
 
 .classes-ui .cms-enrollment-tabs button.active {
-  color: var(--c-violet);
-  border-bottom-color: var(--c-violet);
+  color: var(--violet);
+  border-bottom-color: var(--violet);
 }
 
 .classes-ui .cms-enrollment-toolbar input {
-  background: var(--c-surface);
-  border-color: var(--c-border);
-  color: var(--c-text);
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .classes-ui .cms-enrollment-toolbar input::placeholder {
-  color: var(--c-muted);
+  color: var(--muted);
 }
 
 .classes-ui .cms-enrollment-table th {
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
 }
 
 .classes-ui .cms-enrollment-table td {
-  color: var(--c-text);
+  color: var(--text);
 }
 
 .classes-ui .cms-enrollment-table th,
 .classes-ui .cms-enrollment-table td {
-  border-bottom-color: var(--c-border);
+  border-bottom-color: var(--border);
 }
 
 .classes-ui .cms-enrollment-state {
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
 }
 
 .classes-ui .cms-archived {
@@ -306,9 +306,9 @@
 
 .cms-enrollment-add {
   padding: 9px 15px;
-  border: 1px solid var(--c-violet);
+  border: 1px solid var(--violet);
   border-radius: 8px;
-  background: var(--c-violet);
+  background: var(--primary-fill);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -327,10 +327,10 @@
 .cms-enrollment-success {
   margin-bottom: 18px;
   padding: 12px 15px;
-  border: 1px solid var(--c-green);
+  border: 1px solid var(--green);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--c-green) 10%, var(--c-surface));
-  color: var(--c-green);
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+  color: var(--green);
   font-size: 13px;
   font-weight: 500;
 }

@@ -347,6 +347,14 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
             key={selected.id}
             token={token}
             sessionId={selected.id}
+            onCompleted={() => {
+              setSelected(
+                status === "SCHEDULED"
+                  ? null
+                  : { ...selected, status: "COMPLETED" },
+              );
+              setRetry((value) => value + 1);
+            }}
           />
         </aside>
       )}

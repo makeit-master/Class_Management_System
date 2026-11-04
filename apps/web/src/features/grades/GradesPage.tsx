@@ -1,12 +1,6 @@
+import PageToolbar from "../../components/ui/PageToolbar";
 import { useMemo, useState } from "react";
-import {
-  BookOpen,
-  Check,
-  Download,
-  GraduationCap,
-  Search,
-  TrendingUp,
-} from "lucide-react";
+import { Check, Download, Search } from "lucide-react";
 import "./Grades.css";
 
 type Student = {
@@ -211,16 +205,10 @@ export default function GradesPage() {
 
   return (
     <div className="grades-page">
-      <div className="grades-heading">
-        <div>
-          <div className="grades-eyebrow">
-            <GraduationCap size={14} /> ACADEMIC PERFORMANCE
-          </div>
-          <h2>
-            Gradebook<span>.</span>
-          </h2>
-          <p>Every effort deserves to be recognized.</p>
-        </div>
+      <PageToolbar
+        title="Gradebook"
+        subtitle="Every effort deserves to be recognized."
+      >
         <div className="grades-actions">
           <button className="grades-button" onClick={exportCsv} type="button">
             <Download size={16} /> Export CSV
@@ -238,40 +226,7 @@ export default function GradesPage() {
             <Check size={16} /> Save changes
           </button>
         </div>
-      </div>
-
-      <div className="grades-stats">
-        <div className="grades-stat">
-          <span className="grades-stat-icon violet">
-            <BookOpen size={20} />
-          </span>
-          <div>
-            <p>Students in view</p>
-            <strong>{filtered.length}</strong>
-          </div>
-        </div>
-        <div className="grades-stat">
-          <span className="grades-stat-icon blue">
-            <GraduationCap size={20} />
-          </span>
-          <div>
-            <p>Graded students</p>
-            <strong>{gradedStudents}</strong>
-          </div>
-        </div>
-        <div className="grades-stat">
-          <span className="grades-stat-icon green">
-            <TrendingUp size={20} />
-          </span>
-          <div>
-            <p>Average score</p>
-            <strong>
-              {overallAverage === null ? "—" : overallAverage.toFixed(1)}
-              <small> / 100</small>
-            </strong>
-          </div>
-        </div>
-      </div>
+      </PageToolbar>
 
       <div className="grades-filters">
         <label className="grades-filter">
@@ -393,7 +348,9 @@ export default function GradesPage() {
             <span>
               Scores must be between 0 and 100. Empty cells are ungraded.
             </span>
-            <span>{filtered.length} results</span>
+            <span>
+              {filtered.length} students · {gradedStudents} graded
+            </span>
           </div>
         </section>
 

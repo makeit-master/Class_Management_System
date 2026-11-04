@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/auth-context";
 import { can } from "../../auth/permissions";
 import { useAttendanceNavigationGuard } from "../../lib/unsaved-changes";
 import {
+  completeSession,
   getSessionAttendance,
   updateSessionAttendance,
 } from "./attendance.api";
@@ -11,6 +12,8 @@ import type {
   AttendanceStatus,
   SessionAttendanceData,
 } from "./attendance.types";
+
+import CompleteSessionButton from "./CompleteSessionButton";
 
 function attendanceError(error: unknown) {
   if (error instanceof ApiError) {
@@ -29,9 +32,11 @@ function attendanceError(error: unknown) {
 export default function SessionAttendanceTable({
   token,
   sessionId,
+  onCompleted,
 }: {
   token: string;
   sessionId: string;
+  onCompleted: () => void;
 }) {
   const [data, setData] = useState<SessionAttendanceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +218,7 @@ export default function SessionAttendanceTable({
             {editable && data.students.length > 0 && (
               <button
                 type="button"
+                className="session-primary"
                 disabled={saving || !records.length || records.length > 200}
                 onClick={() => void save()}
               >
@@ -330,6 +336,24 @@ export default function SessionAttendanceTable({
                 </tbody>
               </table>
             </div>
+          )}
+          {data.session.status === "SCHEDULED" && (
+            <CompleteSessionButton
+              sessionId={sessionId}
+              status={data.session.status}
+              students={data.students}
+              canComplete={can(user, "attendance:edit")}
+              hasUnsavedChanges={records.length > 0 || saving || blocked}
+              onComplete={async () => {
+                await completeSession(token, sessionId);
+                setBlocked(true);
+                onCompleted();
+              }}
+              onRefresh={async () => {
+                const fresh = await getSessionAttendance(token, sessionId);
+                if (mounted.current) setData(fresh);
+              }}
+            />
           )}
         </>
       )}

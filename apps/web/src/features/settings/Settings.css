@@ -1,24 +1,10 @@
 /* Isolated Settings styles. Uses existing AppLayout dark-theme/light-theme ancestors. */
 .settings-page {
-  --st-surface: #fff;
-  --st-text: #25263d;
-  --st-muted: #7b8297;
-  --st-border: #e7e8f0;
-  --st-accent: #815ef4;
-  --st-input: #fbfbff;
-  color: var(--st-text);
+  color: var(--text);
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 8px 4px 32px;
-}
-.dark-theme .settings-page {
-  --st-surface: #202135;
-  --st-text: #eef0ff;
-  --st-muted: #9fa3bd;
-  --st-border: #353750;
-  --st-accent: #ac92ff;
-  --st-input: #25263d;
+  padding: 0 0 32px;
 }
 .settings-page * {
   box-sizing: border-box;
@@ -29,21 +15,21 @@
 .settings-page__eyebrow {
   font-size: 11px;
   letter-spacing: 0.15em;
-  color: var(--st-accent);
+  color: var(--violet);
   font-weight: 800;
 }
 .settings-page__heading h2 {
-  color: var(--st-text);
+  color: var(--text);
   font-weight: 750;
   font-size: clamp(27px, 3vw, 36px);
   margin: 7px 0 4px;
 }
 .settings-page__accent {
-  color: var(--st-accent);
+  color: var(--violet);
 }
 .settings-page__heading p,
 .settings-page__section-heading p {
-  color: var(--st-muted);
+  color: var(--secondary);
   margin: 0;
 }
 .settings-page__layout {
@@ -55,8 +41,8 @@
 .settings-page__nav {
   padding: 10px;
   border-radius: 16px;
-  border: 1px solid var(--st-border);
-  background: var(--st-surface);
+  border: 1px solid var(--border);
+  background: var(--surface);
   display: grid;
   gap: 4px;
 }
@@ -68,7 +54,7 @@
   width: 100%;
   border: 0;
   border-radius: 10px;
-  color: var(--st-muted);
+  color: var(--secondary);
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -77,8 +63,8 @@
 }
 .settings-page__nav-btn:hover,
 .settings-page__nav-btn.is-active {
-  color: var(--st-accent);
-  background: color-mix(in srgb, var(--st-accent) 12%, transparent);
+  color: var(--violet);
+  background: color-mix(in srgb, var(--violet) 12%, transparent);
 }
 .settings-page__nav-arrow {
   margin-left: auto;
@@ -87,9 +73,9 @@
   min-width: 0;
 }
 .settings-page__card {
-  background: var(--st-surface);
-  border: 1px solid var(--st-border);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   padding: 28px;
 }
 .settings-page__section-heading {
@@ -98,7 +84,7 @@
 .settings-page__section-heading h3 {
   margin: 0 0 6px;
   font-size: 20px;
-  color: var(--st-text);
+  color: var(--text);
 }
 .settings-page__form-grid {
   display: grid;
@@ -108,7 +94,7 @@
 .settings-page__form-grid label {
   display: grid;
   gap: 9px;
-  color: var(--st-text);
+  color: var(--text);
   font-size: 13px;
   font-weight: 600;
 }
@@ -117,9 +103,9 @@
 .settings-page__form-grid select {
   width: 100%;
   min-width: 0;
-  color: var(--st-text);
-  background: var(--st-input);
-  border: 1px solid var(--st-border);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 9px;
   font: inherit;
   padding: 12px;
@@ -128,7 +114,7 @@
 .settings-page__form-grid input:focus,
 .settings-page__form-grid textarea:focus,
 .settings-page__form-grid select:focus {
-  border-color: var(--st-accent);
+  border-color: var(--violet);
 }
 .settings-page__form-grid input:disabled {
   opacity: 0.65;
@@ -142,16 +128,16 @@
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  border-top: 1px solid var(--st-border);
+  border-top: 1px solid var(--border);
   margin-top: 28px;
   padding-top: 20px;
 }
 .settings-page__footer > span {
-  color: var(--st-muted);
+  color: var(--secondary);
   font-size: 12px;
 }
 .settings-page__primary {
-  background: #805cf5;
+  background: var(--primary-fill);
   color: #fff;
   border: 0;
   border-radius: 10px;
@@ -164,7 +150,7 @@
   cursor: pointer;
 }
 .settings-page__toggle-row {
-  border-bottom: 1px solid var(--st-border);
+  border-bottom: 1px solid var(--border);
   padding: 18px 0;
   display: flex;
   justify-content: space-between;
@@ -176,7 +162,7 @@
 }
 .settings-page__toggle-row p,
 .settings-page__security p {
-  color: var(--st-muted);
+  color: var(--secondary);
   font-size: 13px;
   line-height: 1.6;
   margin: 6px 0 0;
@@ -185,7 +171,7 @@
   width: 44px;
   height: 25px;
   border-radius: 20px;
-  background: var(--st-border);
+  background: var(--border);
   padding: 3px;
   border: 0;
   flex: 0 0 auto;
@@ -209,7 +195,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--st-muted);
+  color: var(--secondary);
   font-size: 13px;
   margin: 20px 0 0;
 }
@@ -219,16 +205,16 @@
   gap: 12px;
 }
 .settings-page__security > svg {
-  color: var(--st-accent);
+  color: var(--violet);
 }
 .settings-page__security h4 {
   margin: 0;
   font-size: 17px;
 }
 .settings-page__security button {
-  border: 1px solid var(--st-border);
-  background: var(--st-input);
-  color: var(--st-muted);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--secondary);
   padding: 12px 15px;
   border-radius: 9px;
   cursor: not-allowed;
@@ -240,15 +226,15 @@
 }
 .settings-page__theme-choice {
   padding: 12px;
-  background: var(--st-input);
-  border: 2px solid var(--st-border);
+  background: var(--surface);
+  border: 2px solid var(--border);
   border-radius: 14px;
   cursor: pointer;
-  color: var(--st-text);
+  color: var(--text);
   text-align: left;
 }
 .settings-page__theme-choice.is-selected {
-  border-color: var(--st-accent);
+  border-color: var(--violet);
 }
 .settings-page__theme-preview {
   height: 94px;
@@ -289,21 +275,21 @@
 }
 .settings-page__theme-name svg:last-child {
   margin-left: auto;
-  color: var(--st-accent);
+  color: var(--violet);
 }
 .settings-page__notice {
   display: flex;
   align-items: start;
   gap: 8px;
   margin-top: 20px;
-  color: var(--st-accent);
+  color: var(--violet);
   font-size: 13px;
 }
 .settings-page__help {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--st-muted);
+  color: var(--secondary);
   font-size: 12px;
   margin-top: 18px;
 }
@@ -335,4 +321,26 @@
     align-items: stretch;
     flex-direction: column;
   }
+}
+
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  font-size: 12px;
+}
+.settings-profile p {
+  color: var(--secondary);
+  font-size: 10px;
+}
+.settings-profile-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--violet-bg);
+  color: var(--violet);
+  width: 64px;
+  height: 64px;
+  font-size: 21px;
 }

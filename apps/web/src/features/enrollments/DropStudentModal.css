@@ -10,10 +10,10 @@
   margin: auto;
   padding: 0;
   overflow-y: auto;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: var(--c-surface);
-  color: var(--c-text);
+  background: var(--surface);
+  color: var(--text);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
 }
 
@@ -42,29 +42,29 @@
 
 .cms-drop-content h2 {
   margin: 0 0 12px;
-  color: var(--c-text);
+  color: var(--text);
   font-size: 21px;
   font-weight: 700;
 }
 
 .cms-drop-content p {
   margin: 0;
-  color: var(--c-secondary);
+  color: var(--secondary);
   font-size: 14px;
   line-height: 1.7;
 }
 
 .cms-drop-content p strong {
-  color: var(--c-text);
+  color: var(--text);
 }
 
 .cms-drop-notice {
   margin-top: 18px;
   padding: 13px 15px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
   font-size: 13px;
   line-height: 1.6;
   text-align: left;
@@ -99,9 +99,9 @@
 }
 
 .cms-drop-cancel {
-  border: 1px solid var(--c-border);
-  background: var(--c-elevated);
-  color: var(--c-text);
+  border: 1px solid var(--border);
+  background: var(--elevated);
+  color: var(--text);
 }
 
 .cms-drop-confirm {

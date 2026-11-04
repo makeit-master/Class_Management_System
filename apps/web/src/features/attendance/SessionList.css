@@ -1,7 +1,7 @@
 .session-page {
   max-width: 1500px;
   margin: 0 auto;
-  color: var(--text-primary);
+  color: var(--text);
 }
 .session-heading {
   display: flex;
@@ -10,27 +10,27 @@
   margin-bottom: 24px;
 }
 .session-heading > svg {
-  color: var(--primary);
+  color: var(--violet);
   flex-shrink: 0;
 }
 .session-heading h2 {
   margin: 0 0 8px;
-  font-size: 28px;
+  font-size: 20px;
   letter-spacing: -0.6px;
 }
 .session-heading p,
 .session-muted,
 .session-panel > p {
-  color: var(--text-secondary);
+  color: var(--secondary);
   font-size: 13px;
 }
 .session-heading p {
   margin: 0;
 }
 .session-panel {
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  background: var(--surface);
   padding: 24px;
   margin-bottom: 20px;
 }
@@ -43,17 +43,17 @@
   flex-direction: column;
   gap: 8px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--secondary);
 }
 .session-page select,
 .session-page button {
   font: inherit;
   font-size: 13px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: var(--elevated);
+  color: var(--text);
 }
 .session-page select {
   width: 100%;
@@ -65,11 +65,11 @@
 }
 .session-page button:not(:disabled):hover,
 .session-page button[aria-pressed="true"] {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--violet);
+  color: var(--violet);
 }
 .session-page :is(select, button):focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
 }
 .session-toolbar,
@@ -83,7 +83,7 @@
 .session-paging {
   margin-top: 20px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--secondary);
 }
 .session-table-scroll {
   overflow-x: auto;
@@ -96,12 +96,12 @@
   font-size: 13px;
 }
 .session-page th {
-  color: var(--text-secondary);
+  color: var(--secondary);
   font-weight: 600;
 }
 .session-page :is(th, td) {
   padding: 16px 12px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 .session-status {
   display: inline-block;
@@ -111,21 +111,21 @@
   font-weight: 700;
 }
 .session-status-scheduled {
-  background: #8b5cf620;
-  color: var(--primary);
+  background: var(--violet-bg);
+  color: var(--violet);
 }
 .session-status-completed {
-  background: #16a34a20;
-  color: #22a75b;
+  background: var(--green-bg);
+  color: var(--green);
 }
 .session-status-cancelled {
-  background: #ef444420;
-  color: #e85050;
+  background: var(--red-bg);
+  color: var(--red);
 }
 .session-selection {
   margin-top: 24px;
   padding: 20px;
-  border: 1px solid var(--primary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow-wrap: anywhere;
   font-size: 13px;
@@ -154,7 +154,7 @@
 }
 .session-details dt,
 .session-attendance-summary dt {
-  color: var(--text-secondary);
+  color: var(--secondary);
   margin-bottom: 6px;
 }
 .session-details dd,
@@ -164,34 +164,71 @@
 }
 .session-attendance-summary > div {
   padding: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: 8px;
 }
 .session-selection caption {
   text-align: left;
   padding: 12px;
-  color: var(--text-secondary);
+  color: var(--secondary);
 }
 .session-selection table {
   min-width: 480px;
 }
 .session-selection th[scope="row"] {
-  color: var(--text-primary);
+  color: var(--text);
   overflow-wrap: anywhere;
 }
 .attendance-status-present {
-  color: #22a75b;
-  background: #16a34a20;
+  color: var(--green);
+  background: var(--green-bg);
 }
 .attendance-status-absent {
-  color: #e85050;
-  background: #ef444420;
+  color: var(--red);
+  background: var(--red-bg);
 }
 .attendance-status-unmarked {
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
+  color: var(--secondary);
+  background: var(--elevated);
 }
 .session-page [tabindex]:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
+}
+
+.session-save-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.session-save-toolbar p {
+  margin-right: auto;
+  color: var(--secondary);
+}
+.session-page .session-primary,
+.session-page .complete-session-trigger,
+.session-page .complete-session-confirm {
+  background: var(--primary-fill);
+  color: white;
+}
+.session-page .complete-session-section {
+  margin-top: 18px;
+}
+.session-attendance-summary > div {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--card-radius);
+  padding: 16px;
+}
+.session-attendance-summary dd {
+  font-size: 26px;
+}
+.session-attendance-summary dt {
+  font-size: 11px;
+}
+.session-selection td select {
+  display: block;
+  width: auto;
+  margin-top: 6px;
 }

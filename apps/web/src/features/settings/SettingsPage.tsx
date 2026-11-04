@@ -92,13 +92,6 @@ export default function SettingsPage({
 
   return (
     <div className="settings-page">
-      <div className="settings-page__heading">
-        <span className="settings-page__eyebrow">YOUR WORKSPACE</span>
-        <h2>
-          Settings<span className="settings-page__accent">.</span>
-        </h2>
-        <p>Make ClassFlow work your way.</p>
-      </div>
       <div className="settings-page__layout">
         <nav className="settings-page__nav" aria-label="Settings sections">
           {tabs.map(({ name, icon: Icon }) => (
@@ -136,6 +129,18 @@ export default function SettingsPage({
             </header>
             {(tab === "Profile" || tab === "School") && (
               <form onSubmit={saveDemo}>
+                {tab === "Profile" && (
+                  <div className="settings-profile">
+                    <span className="settings-profile-avatar">
+                      {profile.firstName[0]}
+                      {profile.lastName[0]}
+                    </span>
+                    <div>
+                      <strong>Profile picture</strong>
+                      <p>Your initials are your current avatar.</p>
+                    </div>
+                  </div>
+                )}
                 {tab === "Profile" ? (
                   <div className="settings-page__form-grid">
                     <label>
