@@ -7,7 +7,10 @@ import { getPrisma } from "../lib/prisma.js";
 import { issueAccessToken } from "../auth/token.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
+import { registrationRouter } from "./registration.routes.js";
+
 export const authRouter = Router();
+authRouter.use(registrationRouter);
 
 const loginSchema = z
   .object({
@@ -71,6 +74,7 @@ authRouter.post("/login", loginLimiter, async (req, res, next) => {
     if (
       !user ||
       !user.isActive ||
+      user.registrationStatus !== "APPROVED" ||
       !user.passwordHash ||
       !validPassword ||
       (user.role !== "TEACHER" && user.role !== "ADMIN")

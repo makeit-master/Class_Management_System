@@ -7,6 +7,19 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProfileGender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
 enum UserRole {
   ADMIN
   TEACHER
@@ -46,6 +59,19 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  registrationStatus RegistrationStatus @default(APPROVED)
+  dateOfBirth DateTime? @db.Date
+  gender ProfileGender?
+  phone String?
+  address String?
+  termsAcceptedAt DateTime?
+  profileCompletedAt DateTime?
+  emailVerifiedAt DateTime?
+  googleSubject String? @unique
+  verificationHash String? @unique
+  verificationExpiresAt DateTime?
+  registrationReviews RegistrationReview[] @relation("Applicant")
+  performedReviews RegistrationReview[] @relation("Reviewer")
   teacherProfile Teacher?
 }
 
@@ -240,4 +266,15 @@ model ClassTuitionRate {
   class Class @relation(fields: [classId], references: [id], onDelete: Restrict)
 
   @@unique([classId, effectiveMonth])
+}
+
+model RegistrationReview {
+  id String @id @default(uuid())
+  userId String
+  reviewerId String
+  decision RegistrationStatus
+  assignedRole UserRole?
+  createdAt DateTime @default(now())
+  user User @relation("Applicant", fields: [userId], references: [id])
+  reviewer User @relation("Reviewer", fields: [reviewerId], references: [id])
 }

@@ -9,6 +9,25 @@
 * 🟢 You can import this file directly.
 */
 
+export const RegistrationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type RegistrationStatus = (typeof RegistrationStatus)[keyof typeof RegistrationStatus]
+
+
+export const ProfileGender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER',
+  PREFER_NOT_TO_SAY: 'PREFER_NOT_TO_SAY'
+} as const
+
+export type ProfileGender = (typeof ProfileGender)[keyof typeof ProfileGender]
+
+
 export const UserRole = {
   ADMIN: 'ADMIN',
   TEACHER: 'TEACHER',

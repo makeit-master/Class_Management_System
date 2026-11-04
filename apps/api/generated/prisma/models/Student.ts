@@ -515,10 +515,6 @@ export type StudentScalarRelationFilter = {
   isNot?: Prisma.StudentWhereInput
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NullableEnumStudentGenderFieldUpdateOperationsInput = {
   set?: $Enums.StudentGender | null
 }

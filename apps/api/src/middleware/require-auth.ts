@@ -34,6 +34,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
       where: { id: userId },
       select: {
         isActive: true,
+        registrationStatus: true,
         id: true,
         fullName: true,
         email: true,
@@ -44,6 +45,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
     if (
       !user ||
       !user.isActive ||
+      user.registrationStatus !== "APPROVED" ||
       (user.role !== "TEACHER" && user.role !== "ADMIN")
     )
       throw new HttpError(401, "Authentication required");
