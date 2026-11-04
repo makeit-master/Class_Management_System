@@ -51,6 +51,7 @@ test("ADMIN teacher management and account lifecycle HTTP integration (isolated 
     email: "teacher@test.com",
     role: "TEACHER",
     isActive: true,
+    registrationStatus: "APPROVED",
     passwordHash: await hash("Secure-test-1234", 4),
     teacherProfile: { id: tid },
   };
