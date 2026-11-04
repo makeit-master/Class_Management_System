@@ -4,7 +4,7 @@ import DashboardPage from "../../features/dashboard/DashboardPage";
 import ClassesPage from "../../features/classes/ClassesPage";
 import StudentsPage from "../../features/students/StudentsPage";
 import TeachersPage from "../../features/teachers/TeachersPage";
-import AttendancePage from "../../features/attendance/AttendancePage";
+import SessionListPage from "../../features/attendance/SessionListPage";
 import SchedulePage from "../../features/schedule/SchedulePage";
 import GradesPage from "../../features/grades/GradesPage";
 import SettingsPage from "../../features/settings/SettingsPage";
@@ -72,7 +72,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         return <TeachersPage />;
 
       case "Attendance":
-        return <AttendancePage />;
+        return <SessionListPage />;
 
       case "Grades":
         return <GradesPage />;
