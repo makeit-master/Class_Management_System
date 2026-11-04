@@ -9,6 +9,17 @@ const list = (items: unknown[], page = 1, total = items.length, totalPages = 1) 
   items, pagination: { page, limit: 10, total, totalPages },
 });
 
+// Session-list tests also load the selected session's attendance now.
+// Individual attendance tests override this default route.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/sessions/*/attendance", route => route.fulfill({
+    json: { success: true, data: {
+      session: { ...session("selected"), className: "Test class" },
+      students: [], summary: { present: 0, absent: 0, unmarked: 0 },
+    } },
+  }));
+});
+
 async function open(page: Page, role = "TEACHER") {
   await page.addInitScript(() => {
     const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }));
@@ -82,4 +93,51 @@ test("ignores an old class response after switching classes", async ({ page }) =
   await page.getByRole("button", { name: "Select session" }).click();
   await expect(page.getByText("Session ID: new-session")).toBeVisible();
   await expect(page.getByText("This session is cancelled. Attendance cannot be recorded.")).toBeVisible();
+});
+
+test("attendance table uses GET data, null is Unmarked, and terminal sessions are read-only", async ({ page }) => {
+  const writes: string[] = [];
+  page.on("request", request => { if (/\/api\/sessions\//.test(request.url()) && request.method() !== "GET") writes.push(request.method()); });
+  await page.route("**/api/classes/*/sessions?*", route => route.fulfill({ json: { success: true, data: list([session("one", "COMPLETED"), session("two", "CANCELLED")]) } }));
+  await page.route("**/api/sessions/*/attendance", async route => {
+    expect(route.request().headers().authorization).toMatch(/^Bearer /);
+    const cancelled = route.request().url().includes("/two/");
+    await route.fulfill({ json: { success: true, data: {
+      session: { ...session(cancelled ? "two" : "one", cancelled ? "CANCELLED" : "COMPLETED"), className: "English A" },
+      students: ["PRESENT", "ABSENT", null].map((attendanceStatus, i) => ({ enrollmentId: `e${i}`, studentId: `s${i}`, studentCode: `ST${i}`, fullName: `Student ${i}`, attendanceStatus, note: null, markedAt: null })),
+      summary: { present: 1, absent: 1, unmarked: 1 },
+    } } });
+  });
+  await open(page);
+  await page.getByLabel("Class", { exact: true }).selectOption("class-a");
+  await page.getByRole("button", { name: "Select session" }).first().click();
+  const register = page.getByRole("region", { name: "Session attendance", exact: true });
+  await expect(register.getByRole("cell", { name: "Unmarked", exact: true })).toBeVisible();
+  await expect(register.getByRole("cell", { name: "PRESENT", exact: true })).toBeVisible();
+  await expect(register.getByRole("cell", { name: "ABSENT", exact: true })).toBeVisible();
+  await expect(register.getByText("This session is completed. Attendance is read-only.")).toBeVisible();
+  await expect(register.getByLabel("Attendance summary")).toContainText("Present1Absent1Unmarked1");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(register.getByRole("region", { name: "Attendance table" })).toBeVisible();
+  await page.getByRole("button", { name: "Select session", exact: true }).click();
+  await expect(register.getByText("This session is cancelled. Attendance is read-only.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Save|Complete session|Mark all/ })).toHaveCount(0);
+  expect(writes).toEqual([]);
+});
+
+test("attendance loading, errors, retry and empty eligible roster", async ({ page }) => {
+  let fail = true;
+  await page.route("**/api/classes/*/sessions?*", route => route.fulfill({ json: { success: true, data: list([session("one")]) } }));
+  await page.route("**/api/sessions/*/attendance", async route => {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    await route.fulfill(fail ? { status: 403, json: { success: false, error: { code: "FORBIDDEN" } } } : { json: { success: true, data: { session: { ...session("one"), className: "Empty class" }, students: [], summary: { present: 0, absent: 0, unmarked: 0 } } } });
+  });
+  await open(page, "ADMIN");
+  await page.getByLabel("Class", { exact: true }).selectOption("class-a");
+  await page.getByRole("button", { name: "Select session" }).click();
+  await expect(page.getByText("Loading attendance…")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("You do not have permission to view this session's attendance.");
+  fail = false;
+  await page.getByRole("button", { name: "Retry attendance" }).click();
+  await expect(page.getByText("No students are eligible for this session.")).toBeVisible();
 });

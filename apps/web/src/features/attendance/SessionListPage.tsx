@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useAuth } from "../../auth/auth-context";
+import { can } from "../../auth/permissions";
+import SessionAttendanceTable from "./SessionAttendanceTable";
 import { getClasses, type ClassListResponse } from "../../classes/class-api";
 import { ApiError } from "../../lib/api-client";
 import { getClassSessions } from "./attendance.api";
@@ -44,7 +46,10 @@ export default function SessionListPage() {
           <p>Choose a class and select a session for attendance.</p>
         </div>
       </header>
-      {token && (
+      {!can(user, "attendance:view") && (
+        <p role="alert">You do not have permission to view attendance.</p>
+      )}
+      {token && can(user, "attendance:view") && (
         <ClassChooser
           key={token}
           token={token}
@@ -304,7 +309,7 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
         )}
       </div>
       {selected && !loading && !error && (
-        <aside className="session-selection" role="status">
+        <aside className="session-selection" aria-label="Selected session">
           <h3>Selected session</h3>
           <p>
             {sessionTime(selected)} · {selected.status}
@@ -313,9 +318,14 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
           <p>
             {selected.status === "CANCELLED"
               ? "This session is cancelled. Attendance cannot be recorded."
-              : "Attendance entry will be available in a later milestone."}
+              : "View attendance for the selected session below."}
           </p>
           <button onClick={() => setSelected(null)}>Clear selection</button>
+          <SessionAttendanceTable
+            key={selected.id}
+            token={token}
+            sessionId={selected.id}
+          />
         </aside>
       )}
     </section>
