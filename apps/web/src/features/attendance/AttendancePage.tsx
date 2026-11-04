@@ -1,90 +1,65 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CalendarDays,
   Check,
   CheckCheck,
   ClipboardCheck,
   Download,
+  RefreshCw,
   Search,
   UsersRound,
 } from "lucide-react";
-import "./Attendance.css";
 
-type AttendanceStatus = "Present" | "Absent";
-type Student = {
+import { useAuth } from "../../auth/auth-context";
+import { getClasses, type ClassRecord } from "../../classes/class-api";
+import { apiClient, ApiError } from "../../lib/api-client";
+import CompleteSessionButton from "./CompleteSessionButton";
+
+import "./Attendance.css";
+import "./AttendancePage.extra.css";
+
+type AttendanceStatus = "PRESENT" | "ABSENT";
+type SessionStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
+
+type ClassSession = {
   id: string;
-  name: string;
-  className: string;
-  email: string;
-  color: string;
+  classId: string;
+  startsAt: string;
+  endsAt: string;
+  status: SessionStatus;
 };
 
-const students: Student[] = [
-  {
-    id: "STU-2024-001",
-    name: "Nguyễn Minh Anh",
-    className: "Math 10A1",
-    email: "minhanh.nguyen@greenwood.edu",
-    color: "violet",
-  },
-  {
-    id: "STU-2024-002",
-    name: "Emma Wilson",
-    className: "Physics 11B2",
-    email: "emma.wilson@greenwood.edu",
-    color: "blue",
-  },
-  {
-    id: "STU-2024-003",
-    name: "Trần Đức Huy",
-    className: "English 10A2",
-    email: "duchuy.tran@greenwood.edu",
-    color: "green",
-  },
-  {
-    id: "STU-2024-004",
-    name: "James Anderson",
-    className: "Chemistry 12A1",
-    email: "james.anderson@greenwood.edu",
-    color: "orange",
-  },
-  {
-    id: "STU-2024-005",
-    name: "Lê Hoàng Mai",
-    className: "Math 10A1",
-    email: "hoangmai.le@greenwood.edu",
-    color: "pink",
-  },
-  {
-    id: "STU-2024-006",
-    name: "Olivia Martinez",
-    className: "Biology 11A1",
-    email: "olivia.martinez@greenwood.edu",
-    color: "blue",
-  },
-  {
-    id: "STU-2024-007",
-    name: "Phạm Gia Bảo",
-    className: "Physics 11B2",
-    email: "giabao.pham@greenwood.edu",
-    color: "violet",
-  },
-  {
-    id: "STU-2024-008",
-    name: "Noah Thompson",
-    className: "English 10A2",
-    email: "noah.thompson@greenwood.edu",
-    color: "green",
-  },
-];
+type SessionListResponse = {
+  items: ClassSession[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
 
-const classOptions = [...new Set(students.map((student) => student.className))];
-const statusOptions: AttendanceStatus[] = ["Present", "Absent"];
+type AttendanceStudent = {
+  enrollmentId: string;
+  studentId: string;
+  studentCode: string;
+  fullName: string;
+  attendanceStatus: AttendanceStatus | null;
+  note: string | null;
+  markedAt: string | null;
+};
 
-function localDate() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
+type AttendanceResponse = {
+  session: {
+    id: string;
+    classId: string;
+    className: string;
+    startsAt: string;
+    endsAt: string;
+    status: SessionStatus;
+  };
+  students: AttendanceStudent[];
+  summary: { present: number; absent: number; unmarked: number };
+};
 
 function initials(name: string) {
   return name
@@ -96,36 +71,58 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function csvCell(value: string) {
-  return `"${value.replace(/"/g, '""')}"`;
+function formatDateTime(iso: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
 }
 
-function exportCsv(
-  date: string,
-  rows: Student[],
-  getStatus: (id: string) => AttendanceStatus | undefined,
-) {
+function readableError(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return "Your session has expired. Sign in again.";
+    if (error.status === 403)
+      return "You do not have permission to access this class.";
+    if (error.status === 409)
+      return "The session has changed. Reload its attendance before continuing.";
+    return error.message;
+  }
+  return error instanceof Error
+    ? error.message
+    : "An unexpected error occurred.";
+}
+
+function csvCell(value: string) {
+  // Escape quotes and prevent spreadsheet formulas from executing on open.
+  const safe = /^[\s]*[=+@\-\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+function exportCsv(data: AttendanceResponse) {
   const lines = [
-    ["Date", "Student ID", "Name", "Class", "Status"].map(csvCell).join(","),
-    ...rows.map((student) =>
+    ["Session", "Student ID", "Student", "Class", "Status"]
+      .map(csvCell)
+      .join(","),
+    ...data.students.map((student) =>
       [
-        date,
-        student.id,
-        student.name,
-        student.className,
-        getStatus(student.id) ?? "Unmarked",
+        data.session.startsAt,
+        student.studentCode,
+        student.fullName,
+        data.session.className,
+        student.attendanceStatus ?? "Unmarked",
       ]
         .map(csvCell)
         .join(","),
     ),
   ];
+
   const blob = new Blob(["\ufeff" + lines.join("\r\n")], {
     type: "text/csv;charset=utf-8",
   });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `classflow-attendance-${date}.csv`;
+  anchor.download = `classflow-attendance-${data.session.id}.csv`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -133,88 +130,312 @@ function exportCsv(
 }
 
 export default function AttendancePage() {
-  const [date, setDate] = useState(localDate);
-  const [className, setClassName] = useState("All classes");
+  const { token, user } = useAuth();
+
+  const [classes, setClasses] = useState<ClassRecord[]>([]);
+  const [classId, setClassId] = useState("");
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
+  const [sessionId, setSessionId] = useState("");
+  const [attendance, setAttendance] = useState<AttendanceResponse | null>(null);
+  const [draft, setDraft] = useState<Record<string, AttendanceStatus>>({});
   const [query, setQuery] = useState("");
-  // Each selected date gets its own attendance entries. In-memory demo only.
-  const [records, setRecords] = useState<Record<string, AttendanceStatus>>({});
-  const [savedSessions, setSavedSessions] = useState<Record<string, boolean>>(
-    {},
-  );
+
+  // Track which requests have settled instead of synchronously resetting
+  // loading state inside effects (react-hooks/set-state-in-effect).
+  const [classesLoadedFor, setClassesLoadedFor] = useState<string | null>(null);
+  const [sessionsLoadedFor, setSessionsLoadedFor] = useState<{
+    token: string;
+    classId: string;
+  } | null>(null);
+  const [attendanceLoadedFor, setAttendanceLoadedFor] = useState<{
+    token: string;
+    sessionId: string;
+  } | null>(null);
+  const [refreshingAttendance, setRefreshingAttendance] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
 
-  const keyFor = (studentId: string) => `${date}::${studentId}`;
-  const sessionKey = `${date}::${className}`;
-  const getStatus = (studentId: string) => records[keyFor(studentId)];
-
-  const classStudents = useMemo(
-    () =>
-      students.filter(
-        (student) =>
-          className === "All classes" || student.className === className,
-      ),
-    [className],
+  const loadingClasses = Boolean(token && classesLoadedFor !== token);
+  const loadingSessions = Boolean(
+    token &&
+    classId &&
+    (sessionsLoadedFor?.token !== token ||
+      sessionsLoadedFor.classId !== classId),
   );
-  const visibleStudents = useMemo(
-    () =>
-      classStudents.filter((student) =>
-        `${student.name} ${student.id} ${student.email} ${student.className}`
-          .toLowerCase()
-          .includes(query.toLowerCase().trim()),
-      ),
-    [classStudents, query],
+  const loadingAttendance = Boolean(
+    refreshingAttendance ||
+    (token &&
+      sessionId &&
+      (attendanceLoadedFor?.token !== token ||
+        attendanceLoadedFor.sessionId !== sessionId)),
   );
-  const totals = {
-    Present: classStudents.filter(
-      (student) => getStatus(student.id) === "Present",
-    ).length,
 
-    Absent: classStudents.filter(
-      (student) => getStatus(student.id) === "Absent",
-    ).length,
+  const pendingRecords = useMemo(() => {
+    if (!attendance) return [];
+    return attendance.students.flatMap((student) => {
+      const status = draft[student.enrollmentId];
+      return status && status !== student.attendanceStatus
+        ? [{ enrollmentId: student.enrollmentId, status }]
+        : [];
+    });
+  }, [attendance, draft]);
 
-    Unmarked: classStudents.filter(
-      (student) => getStatus(student.id) === undefined,
-    ).length,
-  };
+  const hasUnsavedChanges = pendingRecords.length > 0;
+  const mayEdit = user?.role === "ADMIN" || user?.role === "TEACHER";
+  const isEditable = Boolean(
+    mayEdit &&
+    attendance?.session.status === "SCHEDULED" &&
+    !saving &&
+    !loadingAttendance,
+  );
 
-  const mark = (studentId: string, status: AttendanceStatus) => {
-    setRecords((previous) => ({ ...previous, [keyFor(studentId)]: status }));
-    setSavedSessions((previous) => ({ ...previous, [sessionKey]: false }));
-    setFeedback("");
-  };
+  const getStatus = useCallback(
+    (student: AttendanceStudent): AttendanceStatus | null =>
+      draft[student.enrollmentId] ?? student.attendanceStatus,
+    [draft],
+  );
 
-  const markAllPresent = () => {
-    setRecords((previous) => {
-      const next = { ...previous };
-      // Do not limit bulk action to the currently searched subset.
-      classStudents.forEach((student) => {
-        next[keyFor(student.id)] = "Present";
+  const totals = useMemo(() => {
+    const result = { Present: 0, Absent: 0, Unmarked: 0 };
+    for (const student of attendance?.students ?? []) {
+      const status = getStatus(student);
+      if (status === "PRESENT") result.Present++;
+      else if (status === "ABSENT") result.Absent++;
+      else result.Unmarked++;
+    }
+    return result;
+  }, [attendance, getStatus]);
+
+  const visibleStudents = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return (attendance?.students ?? []).filter((student) =>
+      `${student.fullName} ${student.studentCode}`
+        .toLowerCase()
+        .includes(normalized),
+    );
+  }, [attendance, query]);
+
+  // Warn when closing/reloading the browser with unsaved changes.
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedChanges]);
+
+  // Fetch available classes. Backend remains the source of truth for access permissions.
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    getClasses(token, { page: 1, limit: 100 })
+      .then((result) => {
+        if (!active) return;
+        setClasses(result.items);
+        setClassId((previous) =>
+          result.items.some((item) => item.id === previous)
+            ? previous
+            : (result.items[0]?.id ?? ""),
+        );
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(readableError(cause));
+      })
+      .finally(() => {
+        if (active) setClassesLoadedFor(token);
       });
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  // Load sessions when the class changes or after session completion.
+  useEffect(() => {
+    if (!token || !classId) return;
+    let active = true;
+    apiClient<SessionListResponse>(
+      `/classes/${encodeURIComponent(classId)}/sessions?page=1&limit=100`,
+      { token },
+    )
+      .then((result) => {
+        if (!active) return;
+        setSessions(result.items);
+        setError("");
+        setSessionId((previous) => {
+          if (result.items.some((item) => item.id === previous))
+            return previous;
+          return (
+            result.items.find((item) => item.status === "SCHEDULED")?.id ??
+            result.items[0]?.id ??
+            ""
+          );
+        });
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setSessions([]);
+          setSessionId("");
+          setAttendance(null);
+          setDraft({});
+          setError(readableError(cause));
+        }
+      })
+      .finally(() => {
+        if (active) setSessionsLoadedFor({ token, classId });
+      });
+    return () => {
+      active = false;
+    };
+  }, [token, classId]);
+
+  useEffect(() => {
+    if (!token || !sessionId) return;
+    let active = true;
+    apiClient<AttendanceResponse>(
+      `/sessions/${encodeURIComponent(sessionId)}/attendance`,
+      { token },
+    )
+      .then((data) => {
+        if (!active) return;
+        setAttendance(data);
+        setDraft({});
+        setError("");
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setAttendance(null);
+          setError(readableError(cause));
+        }
+      })
+      .finally(() => {
+        if (active) setAttendanceLoadedFor({ token, sessionId });
+      });
+    return () => {
+      active = false;
+    };
+  }, [token, sessionId]);
+
+  const requestRefresh = useCallback(async () => {
+    if (!token || !sessionId || !classId) return;
+
+    setRefreshingAttendance(true);
+    setError("");
+    try {
+      const [latest, sessionList] = await Promise.all([
+        apiClient<AttendanceResponse>(
+          `/sessions/${encodeURIComponent(sessionId)}/attendance`,
+          { token },
+        ),
+        apiClient<SessionListResponse>(
+          `/classes/${encodeURIComponent(classId)}/sessions?page=1&limit=100`,
+          { token },
+        ),
+      ]);
+      setAttendance(latest);
+      setSessions(sessionList.items);
+      setDraft({});
+    } catch (cause) {
+      setError(readableError(cause));
+      throw cause;
+    } finally {
+      setRefreshingAttendance(false);
+    }
+  }, [token, sessionId, classId]);
+
+  function confirmDiscard() {
+    return (
+      !hasUnsavedChanges ||
+      window.confirm("You have unsaved attendance changes. Discard them?")
+    );
+  }
+
+  function changeClass(nextId: string) {
+    if (nextId === classId || !confirmDiscard()) return;
+    setClassId(nextId);
+    setSessions([]);
+    setSessionId("");
+    setAttendance(null);
+    setDraft({});
+    setQuery("");
+    setFeedback("");
+    setError("");
+  }
+
+  function changeSession(nextId: string) {
+    if (nextId === sessionId || !confirmDiscard()) return;
+    setSessionId(nextId);
+    setAttendance(null);
+    setDraft({});
+    setQuery("");
+    setFeedback("");
+    setError("");
+  }
+
+  function mark(studentId: string, status: AttendanceStatus) {
+    if (!isEditable) return;
+    setDraft((previous) => ({ ...previous, [studentId]: status }));
+    setFeedback("");
+    setError("");
+  }
+
+  function markAllPresent() {
+    if (!attendance || !isEditable) return;
+    setDraft((previous) => {
+      const next = { ...previous };
+      for (const student of attendance.students) {
+        next[student.enrollmentId] = "PRESENT";
+      }
       return next;
     });
-    setSavedSessions((previous) => ({ ...previous, [sessionKey]: false }));
-    setFeedback(
-      `Đã đánh dấu có mặt cho ${classStudents.length} học sinh trong phạm vi lớp đang chọn.`,
-    );
-  };
+    setFeedback("");
+    setError("");
+  }
 
-  const save = () => {
-    if (totals.Unmarked > 0) {
-      setFeedback(
-        `Còn ${totals.Unmarked} học sinh chưa điểm danh. Hãy hoàn thành trước khi lưu.`,
+  async function save() {
+    if (!token || !sessionId || !isEditable || !pendingRecords.length) return;
+    setSaving(true);
+    setError("");
+    setFeedback("");
+    try {
+      await apiClient(`/sessions/${encodeURIComponent(sessionId)}/attendance`, {
+        token,
+        method: "PUT",
+        body: JSON.stringify({ records: pendingRecords }),
+      });
+      const latest = await apiClient<AttendanceResponse>(
+        `/sessions/${encodeURIComponent(sessionId)}/attendance`,
+        { token },
       );
-      return;
+      setAttendance(latest);
+      setDraft({});
+      setFeedback("Attendance saved successfully.");
+    } catch (cause) {
+      setError(readableError(cause));
+      if (cause instanceof ApiError && [401, 403, 409].includes(cause.status)) {
+        // Keep drafts so the user can review them before explicitly reloading.
+        setFeedback(
+          "The server rejected the update. Review the latest session data.",
+        );
+      }
+    } finally {
+      setSaving(false);
     }
-    setSavedSessions((previous) => ({ ...previous, [sessionKey]: true }));
-    setFeedback(
-      `Đã ghi nhận điểm danh ngày ${date} trong phiên demo. Chưa lưu lên server.`,
-    );
-  };
+  }
+
+  async function completeSession(id: string) {
+    if (!token) throw new Error("Authentication is required.");
+    await apiClient(`/sessions/${encodeURIComponent(id)}/complete`, {
+      method: "PATCH",
+      token,
+    });
+  }
 
   return (
     <div className="attendance-page">
-      <div className="attendance-header">
+      <header className="attendance-header">
         <div>
           <span className="attendance-eyebrow">
             <span className="attendance-pulse" /> CLASSROOM OVERVIEW
@@ -222,25 +443,30 @@ export default function AttendancePage() {
           <h2>
             Daily attendance<span className="attendance-accent">.</span>
           </h2>
-          <p>A simple check-in. A stronger connection.</p>
+          <p>Manage attendance for each class session.</p>
         </div>
         <div className="attendance-header-actions">
           <button
             className="attendance-button"
             type="button"
-            onClick={() => exportCsv(date, classStudents, getStatus)}
+            disabled={!attendance || loadingAttendance}
+            onClick={() => attendance && exportCsv(attendance)}
           >
             <Download size={16} /> Export CSV
           </button>
           <button
             className="attendance-button attendance-primary"
             type="button"
-            onClick={save}
+            disabled={!isEditable || pendingRecords.length === 0}
+            onClick={() => void save()}
           >
-            <Check size={17} /> Save attendance
+            <Check size={17} />{" "}
+            {saving
+              ? "Saving..."
+              : `Save attendance${pendingRecords.length ? ` (${pendingRecords.length})` : ""}`}
           </button>
         </div>
-      </div>
+      </header>
 
       <div className="attendance-stats">
         {(
@@ -256,6 +482,12 @@ export default function AttendancePage() {
               color: "red",
               icon: UsersRound,
               value: totals.Absent,
+            },
+            {
+              title: "Unmarked",
+              color: "orange",
+              icon: ClipboardCheck,
+              value: totals.Unmarked,
             },
           ] as const
         ).map((item) => (
@@ -274,8 +506,8 @@ export default function AttendancePage() {
               <small> students</small>
             </strong>
             <p>
-              {classStudents.length
-                ? Math.round((item.value / classStudents.length) * 100)
+              {attendance?.students.length
+                ? Math.round((item.value / attendance.students.length) * 100)
                 : 0}
               % of selected students
             </p>
@@ -287,41 +519,52 @@ export default function AttendancePage() {
         <div className="attendance-panel-top">
           <div>
             <h3>Attendance register</h3>
-            <p>Record attendance by class and date.</p>
+            <p>Choose a class and session to review or mark attendance.</p>
           </div>
           <span className="attendance-count">
-            {classStudents.length} students
+            {attendance?.students.length ?? 0} students
           </span>
         </div>
+
         <div className="attendance-filters">
-          <label className="attendance-date">
-            <CalendarDays size={17} />
-            <input
-              aria-label="Attendance date"
-              type="date"
-              value={date}
-              onChange={(event) => {
-                setDate(event.target.value);
-                setFeedback("");
-              }}
-            />
-          </label>
           <label className="attendance-select-label">
             <span className="attendance-sr-only">Choose class</span>
             <select
               aria-label="Choose class"
-              value={className}
-              onChange={(event) => {
-                setClassName(event.target.value);
-                setFeedback("");
-              }}
+              value={classId}
+              disabled={loadingClasses || saving}
+              onChange={(event) => changeClass(event.target.value)}
             >
-              <option>All classes</option>
-              {classOptions.map((option) => (
-                <option key={option}>{option}</option>
+              {classes.length === 0 && (
+                <option value="">No classes available</option>
+              )}
+              {classes.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
               ))}
             </select>
           </label>
+
+          <label className="attendance-select-label">
+            <span className="attendance-sr-only">Choose session</span>
+            <select
+              aria-label="Choose session"
+              value={sessionId}
+              disabled={!classId || loadingSessions || saving}
+              onChange={(event) => changeSession(event.target.value)}
+            >
+              {sessions.length === 0 && (
+                <option value="">No sessions available</option>
+              )}
+              {sessions.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {formatDateTime(item.startsAt)} · {item.status}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className="attendance-search">
             <Search size={17} />
             <input
@@ -331,33 +574,49 @@ export default function AttendancePage() {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
+
           <button
             className="attendance-button attendance-mark-all"
             type="button"
+            disabled={!attendance || !attendance.students.length || !isEditable}
             onClick={markAllPresent}
           >
             <CheckCheck size={16} /> Mark all present
           </button>
         </div>
+
         <div className="attendance-summary">
           <span>
             <ClipboardCheck size={15} />{" "}
-            {classStudents.length - totals.Unmarked}/{classStudents.length}{" "}
-            marked
+            {attendance
+              ? `${attendance.students.length - totals.Unmarked}/${attendance.students.length} marked`
+              : "No session selected"}
           </span>
           <span>
-            {savedSessions[sessionKey]
-              ? "Saved in demo session"
-              : totals.Unmarked
-                ? `${totals.Unmarked} unmarked`
-                : "Ready to save"}
+            {hasUnsavedChanges
+              ? `${pendingRecords.length} unsaved change(s)`
+              : attendance?.session.status === "COMPLETED"
+                ? "Completed · Read-only"
+                : attendance?.session.status === "CANCELLED"
+                  ? "Cancelled · Read-only"
+                  : "Up to date"}
           </span>
         </div>
+
+        {error && (
+          <p
+            className="attendance-feedback attendance-feedback-error"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
         {feedback && (
           <p className="attendance-feedback" role="status">
             {feedback}
           </p>
         )}
+
         <div className="attendance-table-scroll">
           <table className="attendance-table">
             <thead>
@@ -369,68 +628,118 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {visibleStudents.map((student) => (
-                <tr key={student.id}>
-                  <td>
-                    <div className="attendance-student">
-                      <span
-                        className={`attendance-avatar attendance-avatar-${student.color}`}
-                      >
-                        {initials(student.name)}
-                      </span>
-                      <div>
-                        <strong>{student.name}</strong>
-                        <small>{student.email}</small>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="attendance-muted">{student.id}</td>
-                  <td>
-                    <span className="attendance-class-tag">
-                      {student.className}
-                    </span>
-                  </td>
-                  <td>
-                    <div
-                      className="attendance-segments"
-                      role="group"
-                      aria-label={`Attendance for ${student.name}`}
-                    >
-                      {statusOptions.map((status) => (
-                        <button
-                          type="button"
-                          key={status}
-                          aria-pressed={getStatus(student.id) === status}
-                          className={
-                            getStatus(student.id) === status
-                              ? `is-active is-${status.toLowerCase()}`
-                              : ""
-                          }
-                          onClick={() => mark(student.id, status)}
-                        >
-                          {getStatus(student.id) === status && (
-                            <Check size={13} />
-                          )}
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {visibleStudents.length === 0 && (
+              {(loadingClasses || loadingSessions || loadingAttendance) && (
                 <tr>
                   <td colSpan={4} className="attendance-empty">
-                    No students match your search.
+                    Loading attendance...
                   </td>
                 </tr>
               )}
+              {!loadingClasses &&
+                !loadingSessions &&
+                !loadingAttendance &&
+                visibleStudents.map((student) => (
+                  <tr key={student.enrollmentId}>
+                    <td>
+                      <div className="attendance-student">
+                        <span className="attendance-avatar">
+                          {initials(student.fullName)}
+                        </span>
+                        <div>
+                          <strong>{student.fullName}</strong>
+                          <small>{student.studentCode}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="attendance-muted">{student.studentCode}</td>
+                    <td>
+                      <span className="attendance-class-tag">
+                        {attendance?.session.className}
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        className="attendance-segments"
+                        role="group"
+                        aria-label={`Attendance for ${student.fullName}`}
+                      >
+                        {(["PRESENT", "ABSENT"] as const).map((status) => (
+                          <button
+                            type="button"
+                            key={status}
+                            aria-pressed={getStatus(student) === status}
+                            disabled={!isEditable}
+                            className={
+                              getStatus(student) === status
+                                ? `is-active is-${status.toLowerCase()}`
+                                : ""
+                            }
+                            onClick={() => mark(student.enrollmentId, status)}
+                          >
+                            {getStatus(student) === status && (
+                              <Check size={13} />
+                            )}
+                            {status === "PRESENT" ? "Present" : "Absent"}
+                          </button>
+                        ))}
+                        {getStatus(student) === null && (
+                          <span className="attendance-unmarked">Unmarked</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              {!loadingClasses &&
+                !loadingSessions &&
+                !loadingAttendance &&
+                visibleStudents.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="attendance-empty">
+                      {!classId
+                        ? "No classes available."
+                        : !sessionId
+                          ? "No sessions available for this class."
+                          : "No students match this session or search."}
+                    </td>
+                  </tr>
+                )}
             </tbody>
           </table>
         </div>
+
+        {/* Complete Session must be outside the horizontal-scroll table container. */}
+        {attendance && !loadingAttendance && (
+          <div className="attendance-complete-row">
+            <CompleteSessionButton
+              key={attendance.session.id}
+              sessionId={attendance.session.id}
+              status={attendance.session.status}
+              students={attendance.students}
+              canComplete={Boolean(mayEdit)}
+              hasUnsavedChanges={hasUnsavedChanges || saving}
+              onComplete={() => completeSession(attendance.session.id)}
+              onRefresh={requestRefresh}
+            />
+          </div>
+        )}
+
         <footer className="attendance-footer">
-          <span>Mock data · Changes reset on reload</span>
+          <span>
+            {attendance
+              ? `Session: ${formatDateTime(attendance.session.startsAt)} · ${attendance.session.status}`
+              : "Live attendance from ClassFlow"}
+          </span>
           <span>{visibleStudents.length} visible students</span>
+          <button
+            className="attendance-button attendance-refresh-button"
+            type="button"
+            disabled={
+              !sessionId || loadingAttendance || saving || hasUnsavedChanges
+            }
+            onClick={() => void requestRefresh()}
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
         </footer>
       </section>
     </div>
