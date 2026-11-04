@@ -129,6 +129,7 @@ classRouter.get(
       const prisma = getPrisma();
 
       const teachers = await prisma.teacher.findMany({
+        where: { user: { isActive: true } },
         select: {
           id: true,
           employeeCode: true,
@@ -298,6 +299,7 @@ classRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
     const teacher = await prisma.teacher.findUnique({
       where: {
         id: teacherId,
+        user: { isActive: true },
       },
       select: {
         id: true,
@@ -399,6 +401,7 @@ classRouter.patch("/:id", requireRole("ADMIN"), async (req, res, next) => {
       const teacher = await prisma.teacher.findUnique({
         where: {
           id: updateData.teacherId,
+          user: { isActive: true },
         },
         select: {
           id: true,
@@ -509,6 +512,19 @@ classRouter.patch(
 
       const prisma = getPrisma();
       const classId = parsedId.data;
+
+      const existing = await prisma.class.findUnique({
+        where: { id: classId },
+        select: {
+          teacher: { select: { user: { select: { isActive: true } } } },
+        },
+      });
+      if (!existing) throw new HttpError(404, "Class not found");
+      if (!existing.teacher.user.isActive)
+        throw new HttpError(
+          409,
+          "Assign an active teacher before restoring this class",
+        );
 
       // Restore only archived classes.
       await prisma.class.updateMany({

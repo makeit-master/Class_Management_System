@@ -1,3 +1,4 @@
+import { teacherRouter } from "./routes/teacher.routes.js";
 import express from "express";
 
 import { healthRouter } from "./routes/health.routes.js";
@@ -20,6 +21,7 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/classes", classRouter);
+app.use("/api/teachers", teacherRouter);
 app.use("/api/students", studentRouter);
 app.use("/api/enrollments", enrollmentRouter);
 app.use("/api", sessionRouter);
