@@ -527,3 +527,60 @@ test("confirmed navigation discards the draft without writing", async ({
   ).toBeDisabled();
   expect(state.writes).toHaveLength(0);
 });
+test("completes only a fully saved register and refreshes the selected session", async ({
+  page,
+}) => {
+  await openEditor(page);
+  const complete = page.getByRole("button", {
+    name: "Complete Session",
+    exact: true,
+  });
+  await expect(complete).toBeDisabled();
+  await page
+    .getByLabel("Attendance for Student 0 (ST0)")
+    .selectOption("ABSENT");
+  await expect(complete).toBeDisabled();
+  await page.getByRole("button", { name: "Save attendance" }).click();
+  await expect(complete).toBeEnabled();
+
+  let completions = 0;
+  await page.route("**/api/sessions/one/complete", async (route) => {
+    expect(route.request().method()).toBe("PATCH");
+    expect(route.request().headers().authorization).toMatch(/^Bearer /);
+    completions++;
+    await route.fulfill({
+      json: {
+        success: true,
+        data: { sessionId: "one", classId: "class-a", status: "COMPLETED" },
+      },
+    });
+  });
+  await page.route("**/api/classes/*/sessions?*", (route) =>
+    route.fulfill({
+      json: { success: true, data: list([session("one", "COMPLETED")]) },
+    }),
+  );
+  await page.route("**/api/sessions/one/attendance", (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        data: {
+          session: { ...session("one", "COMPLETED"), className: "Test class" },
+          students: [],
+          summary: { present: 0, absent: 0, unmarked: 0 },
+        },
+      },
+    }),
+  );
+  await complete.click();
+  const dialog = page.getByRole("dialog", { name: "Complete Session?" });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  expect(completions).toBe(0);
+  await complete.click();
+  await dialog.getByRole("button", { name: "Confirm Completion" }).click();
+  await expect(
+    page.getByText("This session is completed. Attendance is read-only."),
+  ).toBeVisible();
+  await expect(complete).toHaveCount(0);
+  expect(completions).toBe(1);
+});
