@@ -1,4 +1,3 @@
-
 import type { AuthUser } from "./auth-api";
 
 export type AppRole = AuthUser["role"];
@@ -9,20 +8,19 @@ export type AppPermission =
   | "students:view"
   | "teachers:manage"
   | "attendance:view"
+  | "attendance:edit"
   | "grades:view"
   | "schedule:view"
   | "settings:manage";
 
-const rolePermissions: Record<
-  AppRole,
-  readonly AppPermission[]
-> = {
+const rolePermissions: Record<AppRole, readonly AppPermission[]> = {
   ADMIN: [
     "dashboard:view",
     "classes:view",
     "students:view",
     "teachers:manage",
     "attendance:view",
+    "attendance:edit",
     "grades:view",
     "schedule:view",
     "settings:manage",
@@ -33,15 +31,13 @@ const rolePermissions: Record<
     "classes:view",
     "students:view",
     "attendance:view",
+    "attendance:edit",
     "grades:view",
     "schedule:view",
   ],
 };
 
-export function can(
-  user: AuthUser | null,
-  permission: AppPermission
-): boolean {
+export function can(user: AuthUser | null, permission: AppPermission): boolean {
   if (!user) return false;
 
   return rolePermissions[user.role]?.includes(permission) ?? false;
@@ -58,10 +54,7 @@ export const pagePermissions: Record<string, AppPermission> = {
   Settings: "settings:manage",
 };
 
-export function canAccessPage(
-  user: AuthUser | null,
-  page: string
-): boolean {
+export function canAccessPage(user: AuthUser | null, page: string): boolean {
   const permission = pagePermissions[page];
 
   return permission !== undefined && can(user, permission);

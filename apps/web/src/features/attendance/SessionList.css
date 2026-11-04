@@ -141,15 +141,57 @@
     justify-content: flex-start;
   }
 }
-.session-details, .session-attendance-summary { display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0; }
-.session-details > div, .session-attendance-summary > div { min-width: 100px; }
-.session-details dt, .session-attendance-summary dt { color: var(--text-secondary); margin-bottom: 6px; }
-.session-details dd, .session-attendance-summary dd { margin: 0; font-weight: 600; }
-.session-attendance-summary > div { padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; }
-.session-selection caption { text-align: left; padding: 12px; color: var(--text-secondary); }
-.session-selection table { min-width: 480px; }
-.session-selection th[scope="row"] { color: var(--text-primary); overflow-wrap: anywhere; }
-.attendance-status-present { color: #22a75b; background: #16a34a20; }
-.attendance-status-absent { color: #e85050; background: #ef444420; }
-.attendance-status-unmarked { color: var(--text-secondary); background: var(--bg-tertiary); }
-.session-page [tabindex]:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.session-details,
+.session-attendance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 20px 0;
+}
+.session-details > div,
+.session-attendance-summary > div {
+  min-width: 100px;
+}
+.session-details dt,
+.session-attendance-summary dt {
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.session-details dd,
+.session-attendance-summary dd {
+  margin: 0;
+  font-weight: 600;
+}
+.session-attendance-summary > div {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.session-selection caption {
+  text-align: left;
+  padding: 12px;
+  color: var(--text-secondary);
+}
+.session-selection table {
+  min-width: 480px;
+}
+.session-selection th[scope="row"] {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.attendance-status-present {
+  color: #22a75b;
+  background: #16a34a20;
+}
+.attendance-status-absent {
+  color: #e85050;
+  background: #ef444420;
+}
+.attendance-status-unmarked {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+.session-page [tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}

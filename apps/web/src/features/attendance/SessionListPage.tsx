@@ -1,3 +1,4 @@
+import { confirmAttendanceNavigation } from "../../lib/unsaved-changes";
 import { useEffect, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useAuth } from "../../auth/auth-context";
@@ -113,7 +114,10 @@ function ClassChooser({ token, teacher }: { token: string; teacher: boolean }) {
                 <select
                   aria-label="Class"
                   value={classId}
-                  onChange={(event) => setClassId(event.target.value)}
+                  onChange={(event) => {
+                    if (confirmAttendanceNavigation())
+                      setClassId(event.target.value);
+                  }}
                 >
                   <option value="">Choose a class</option>
                   {data.items.map((item) => (
@@ -131,6 +135,7 @@ function ClassChooser({ token, teacher }: { token: string; teacher: boolean }) {
                   <button
                     disabled={page <= 1}
                     onClick={() => {
+                      if (!confirmAttendanceNavigation()) return;
                       setClassId("");
                       setPage(page - 1);
                     }}
@@ -143,6 +148,7 @@ function ClassChooser({ token, teacher }: { token: string; teacher: boolean }) {
                   <button
                     disabled={page >= data.pagination.totalPages}
                     onClick={() => {
+                      if (!confirmAttendanceNavigation()) return;
                       setClassId("");
                       setPage(page + 1);
                     }}
@@ -209,6 +215,7 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
             aria-label="Status"
             value={status}
             onChange={(event) => {
+              if (!confirmAttendanceNavigation()) return;
               setStatus(event.target.value as SessionStatus | "");
               setPage(1);
               setSelected(null);
@@ -268,7 +275,14 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
                         <td>
                           <button
                             aria-pressed={selected?.id === session.id}
-                            onClick={() => setSelected(session)}
+                            onClick={() => {
+                              if (
+                                selected?.id !== session.id &&
+                                !confirmAttendanceNavigation()
+                              )
+                                return;
+                              setSelected(session);
+                            }}
                           >
                             {selected?.id === session.id
                               ? "Selected"
@@ -285,6 +299,7 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
               <button
                 disabled={page <= 1}
                 onClick={() => {
+                  if (!confirmAttendanceNavigation()) return;
                   setPage(page - 1);
                   setSelected(null);
                 }}
@@ -298,6 +313,7 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
               <button
                 disabled={page >= data.pagination.totalPages}
                 onClick={() => {
+                  if (!confirmAttendanceNavigation()) return;
                   setPage(page + 1);
                   setSelected(null);
                 }}
@@ -320,7 +336,13 @@ function ClassSessions({ token, classId }: { token: string; classId: string }) {
               ? "This session is cancelled. Attendance cannot be recorded."
               : "View attendance for the selected session below."}
           </p>
-          <button onClick={() => setSelected(null)}>Clear selection</button>
+          <button
+            onClick={() => {
+              if (confirmAttendanceNavigation()) setSelected(null);
+            }}
+          >
+            Clear selection
+          </button>
           <SessionAttendanceTable
             key={selected.id}
             token={token}

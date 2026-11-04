@@ -1,3 +1,4 @@
+import { confirmAttendanceNavigation } from "../../lib/unsaved-changes";
 import { useState, type ReactNode } from "react";
 
 import DashboardPage from "../../features/dashboard/DashboardPage";
@@ -31,6 +32,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       return;
     }
 
+    if (page !== activePage && !confirmAttendanceNavigation()) return;
     setActivePage(page);
   };
 
@@ -43,6 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleLogout = () => {
+    if (!confirmAttendanceNavigation()) return;
     logout();
   };
 
