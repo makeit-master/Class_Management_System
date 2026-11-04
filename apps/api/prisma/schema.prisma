@@ -112,6 +112,7 @@ model Class {
   schedules   Schedule[]
   sessions    ClassSession[]
   assessments Assessment[]
+  tuitionRates ClassTuitionRate[]
 
   @@index([teacherId])
   @@index([archivedAt])
@@ -222,4 +223,20 @@ model Grade {
 
   @@unique([enrollmentId, assessmentId])
   @@index([assessmentId])
+}
+
+
+// A rate applies from effectiveMonth onward until a later month supersedes it.
+// Preview calculations are not finalized invoices.
+model ClassTuitionRate {
+  id             String   @id @default(uuid())
+  classId        String
+  effectiveMonth String   @db.VarChar(7)
+  amountVnd      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Restrict)
+
+  @@unique([classId, effectiveMonth])
 }

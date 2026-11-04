@@ -72,3 +72,8 @@ export type Assessment = Prisma.AssessmentModel
  * 
  */
 export type Grade = Prisma.GradeModel
+/**
+ * Model ClassTuitionRate
+ *
+ */
+export type ClassTuitionRate = Prisma.ClassTuitionRateModel

@@ -407,7 +407,8 @@ export const ModelName = {
   ClassSession: 'ClassSession',
   Attendance: 'Attendance',
   Assessment: 'Assessment',
-  Grade: 'Grade'
+  Grade: 'Grade',
+  ClassTuitionRate: 'ClassTuitionRate'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "teacher" | "student" | "class" | "enrollment" | "enrollmentPeriod" | "schedule" | "classSession" | "attendance" | "assessment" | "grade"
+    modelProps: "user" | "teacher" | "student" | "class" | "enrollment" | "enrollmentPeriod" | "schedule" | "classSession" | "attendance" | "assessment" | "grade" | "classTuitionRate"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ClassTuitionRate: {
+      payload: Prisma.$ClassTuitionRatePayload<ExtArgs>
+      fields: Prisma.ClassTuitionRateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ClassTuitionRateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ClassTuitionRateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        findFirst: {
+          args: Prisma.ClassTuitionRateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ClassTuitionRateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        findMany: {
+          args: Prisma.ClassTuitionRateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>[]
+        }
+        create: {
+          args: Prisma.ClassTuitionRateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        createMany: {
+          args: Prisma.ClassTuitionRateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ClassTuitionRateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>[]
+        }
+        delete: {
+          args: Prisma.ClassTuitionRateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        update: {
+          args: Prisma.ClassTuitionRateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        deleteMany: {
+          args: Prisma.ClassTuitionRateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ClassTuitionRateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ClassTuitionRateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>[]
+        }
+        upsert: {
+          args: Prisma.ClassTuitionRateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClassTuitionRatePayload>
+        }
+        aggregate: {
+          args: Prisma.ClassTuitionRateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateClassTuitionRate>
+        }
+        groupBy: {
+          args: Prisma.ClassTuitionRateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClassTuitionRateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ClassTuitionRateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClassTuitionRateCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1420,6 +1495,18 @@ export const GradeScalarFieldEnum = {
 } as const
 
 export type GradeScalarFieldEnum = (typeof GradeScalarFieldEnum)[keyof typeof GradeScalarFieldEnum]
+
+
+export const ClassTuitionRateScalarFieldEnum = {
+  id: 'id',
+  classId: 'classId',
+  effectiveMonth: 'effectiveMonth',
+  amountVnd: 'amountVnd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClassTuitionRateScalarFieldEnum = (typeof ClassTuitionRateScalarFieldEnum)[keyof typeof ClassTuitionRateScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1753,6 +1840,7 @@ export type GlobalOmitConfig = {
   attendance?: Prisma.AttendanceOmit
   assessment?: Prisma.AssessmentOmit
   grade?: Prisma.GradeOmit
+  classTuitionRate?: Prisma.ClassTuitionRateOmit
 }
 
 /* Types for Logging */

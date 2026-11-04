@@ -61,7 +61,8 @@ export const ModelName = {
   ClassSession: 'ClassSession',
   Attendance: 'Attendance',
   Assessment: 'Assessment',
-  Grade: 'Grade'
+  Grade: 'Grade',
+  ClassTuitionRate: 'ClassTuitionRate'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -220,6 +221,18 @@ export const GradeScalarFieldEnum = {
 } as const
 
 export type GradeScalarFieldEnum = (typeof GradeScalarFieldEnum)[keyof typeof GradeScalarFieldEnum]
+
+
+export const ClassTuitionRateScalarFieldEnum = {
+  id: 'id',
+  classId: 'classId',
+  effectiveMonth: 'effectiveMonth',
+  amountVnd: 'amountVnd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClassTuitionRateScalarFieldEnum = (typeof ClassTuitionRateScalarFieldEnum)[keyof typeof ClassTuitionRateScalarFieldEnum]
 
 
 export const SortOrder = {
