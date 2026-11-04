@@ -1,26 +1,26 @@
 .app-container .app-header {
   position: relative;
   z-index: 40;
-  min-height: 100px;
-  padding: 24px 32px;
+  min-height: 125px;
+  padding: 24px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
   overflow: visible;
 }
 .app-container .header-title h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 28px;
+  font-weight: 650;
   letter-spacing: -0.8px;
 }
 .app-container .header-title p {
   margin: 8px 0 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .app-container .header-actions {
   display: flex;
@@ -34,9 +34,9 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  color: var(--text-muted);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 9px;
 }
 .app-container .search-box input {
@@ -44,17 +44,17 @@
   min-width: 0;
   border: none;
   outline: none;
-  color: var(--text-primary);
+  color: var(--text);
   background: transparent;
   font-size: 12px;
 }
 .app-container .search-box input::placeholder {
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .app-container .search-shortcut {
   font-size: 10px;
   white-space: nowrap;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .app-container .header-popovers {
   display: flex;
@@ -71,9 +71,9 @@
   justify-content: center;
   align-items: center;
   height: 40px;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  color: var(--secondary);
+  background: var(--elevated);
+  border: 1px solid var(--border);
   border-radius: 9px;
   cursor: pointer;
 }
@@ -82,8 +82,8 @@
 }
 .app-container .header-icon-button:hover,
 .app-container .header-user:hover {
-  color: var(--text-primary);
-  border-color: var(--primary);
+  color: var(--text);
+  border-color: var(--violet);
 }
 .app-container .notification-dot {
   position: absolute;
@@ -117,9 +117,9 @@
   width: min(340px, calc(100vw - 100px));
   padding: 8px;
   z-index: 1000;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 13px;
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.32);
 }
@@ -129,12 +129,12 @@
   justify-content: space-between;
   padding: 12px;
   gap: 8px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 .app-container .header-dropdown-heading span {
   font-size: 11px;
-  color: var(--primary);
-  background: var(--bg-tertiary);
+  color: var(--violet);
+  background: var(--elevated);
   padding: 4px 7px;
   border-radius: 20px;
 }
@@ -145,7 +145,7 @@
   text-align: left;
   width: 100%;
   padding: 12px;
-  color: var(--text-primary);
+  color: var(--text);
   background: transparent;
   border: 0;
   border-radius: 9px;
@@ -153,7 +153,7 @@
 }
 .app-container .header-notification:hover,
 .app-container .header-user-menu button:hover:not(:disabled) {
-  background: var(--bg-tertiary);
+  background: var(--elevated);
 }
 .app-container .header-notification span:last-child {
   display: flex;
@@ -165,7 +165,7 @@
 }
 .app-container .header-notification small {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .app-container .header-unread-dot {
   height: 7px;
@@ -173,7 +173,7 @@
   flex-shrink: 0;
   margin-top: 5px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--violet);
 }
 .app-container .header-clear {
   display: flex;
@@ -182,7 +182,7 @@
   width: 100%;
   border: 0;
   background: transparent;
-  color: var(--primary);
+  color: var(--violet);
   cursor: pointer;
   padding: 10px 12px;
   font-size: 12px;
@@ -192,10 +192,10 @@
   padding: 10px 12px;
   margin: 0;
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .app-container .header-demo-caption {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 .app-container .header-user-menu {
   width: 240px;
@@ -205,10 +205,10 @@
   flex-direction: column;
   gap: 5px;
   padding: 12px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 .app-container .header-user-heading small {
-  color: var(--text-muted);
+  color: var(--muted);
   font-size: 11px;
 }
 .app-container .header-user-menu button {
@@ -218,7 +218,7 @@
   width: 100%;
   padding: 12px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--secondary);
   border: 0;
   border-radius: 8px;
   text-align: left;
@@ -237,31 +237,141 @@
     width: 190px;
   }
 }
-@media (max-width: 700px) {
-  .app-container .app-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .app-container .header-actions {
-    width: 100%;
-  }
-  .app-container .search-box {
-    flex: 1;
-    width: auto;
-  }
-  .app-container .header-popovers {
-    gap: 8px;
+
+.header-leading,
+.header-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.header-breadcrumb {
+  font-size: 10px;
+  color: var(--secondary);
+  margin-bottom: 10px;
+}
+.header-menu-button {
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  color: var(--secondary);
+  padding: 4px;
+}
+.app-container .header-user {
+  border-color: transparent;
+  background: transparent;
+}
+.app-container .header-avatar {
+  background: var(--violet-bg);
+  color: var(--violet);
+}
+.header-user-name {
+  font-size: 11px;
+}
+@media (max-width: 1000px) {
+  .header-user-name {
+    display: none;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 760px) {
+  .app-container .app-header {
+    min-height: 112px;
+    padding: 18px 20px;
+    gap: 8px;
+  }
+  .app-container .header-title h1 {
+    font-size: 23px;
+  }
+  .app-container .header-title p,
   .app-container .search-shortcut {
     display: none;
   }
+  .app-container .header-actions,
+  .app-container .header-popovers {
+    gap: 5px;
+  }
+  .app-container .search-box {
+    position: relative;
+    width: 32px;
+    height: 35px;
+    padding: 5px;
+    border-color: transparent;
+    background: transparent;
+  }
+  .app-container .search-box input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: text;
+  }
+  .app-container .search-box:focus-within {
+    position: absolute;
+    inset-inline: 16px;
+    z-index: 2;
+    width: auto;
+    background: var(--surface);
+    border-color: var(--border);
+  }
+  .app-container .search-box:focus-within input {
+    position: static;
+    opacity: 1;
+  }
+  .app-container .notifications-menu {
+    position: fixed;
+    top: 85px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
+  }
+}
+@media (max-width: 380px) {
   .app-container .app-header {
-    padding: 14px;
+    padding-inline: 12px;
   }
-  .app-container .header-title h1 {
-    font-size: 20px;
+  .app-container .header-user {
+    padding-inline: 0;
   }
+  .app-container .header-user > svg {
+    display: none;
+  }
+  .app-container .header-icon-button {
+    width: 33px;
+    height: 33px;
+  }
+  .header-breadcrumb {
+    gap: 4px;
+  }
+}
+
+.app-container .search-box {
+  position: relative;
+}
+.search-pages {
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto;
+  z-index: 3;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.search-pages button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  color: var(--text);
+  border: 0;
+  padding: 9px;
+}
+.search-pages button:hover {
+  background: var(--elevated);
+}
+.search-pages p {
+  padding: 0 9px;
+}
+.search-shortcut {
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--elevated);
 }

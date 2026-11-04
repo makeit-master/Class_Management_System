@@ -1,11 +1,14 @@
 import { useState } from "react";
 import {
+  X,
+  Sparkles,
+  ArrowUpRight,
   CalendarDays,
   BookOpen,
-  Users,
+  UsersRound,
   GraduationCap,
-  ClipboardCheck,
-  ChartColumn,
+  CheckCheck,
+  TrendingUp,
   Settings,
   LogOut,
   Moon,
@@ -22,6 +25,7 @@ import "./Sidebar.css";
 
 type SidebarProps = {
   activePage: string;
+  onClose?: () => void;
   onNavigate: (page: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
@@ -35,15 +39,15 @@ const groups = [
     items: [
       { label: "Dashboard", icon: LayoutDashboard },
       { label: "Classes", icon: BookOpen },
-      { label: "Students", icon: Users },
+      { label: "Students", icon: UsersRound },
       { label: "Teachers", icon: GraduationCap },
     ],
   },
   {
     title: "ACADEMIC",
     items: [
-      { label: "Attendance", icon: ClipboardCheck },
-      { label: "Grades", icon: ChartColumn },
+      { label: "Attendance", icon: CheckCheck },
+      { label: "Grades", icon: TrendingUp },
       { label: "Schedule", icon: CalendarDays },
     ],
   },
@@ -51,6 +55,7 @@ const groups = [
 
 export default function Sidebar({
   activePage,
+  onClose,
   onNavigate,
   isDark,
   onToggleTheme,
@@ -82,20 +87,30 @@ export default function Sidebar({
       {/* Brand */}
       <div className="sidebar-logo">
         <div className="logo-icon">
-          <GraduationCap size={20} />
+          <GraduationCap size={26} strokeWidth={1.8} />
         </div>
 
-        <span className="sidebar-label sidebar-brand">ClassFlow</span>
+        <span className="sidebar-label sidebar-brand">
+          ClassFlow<span className="brand-dot">.</span>
+        </span>
 
         <button
           type="button"
           className="sidebar-collapse"
-          onClick={() => setCollapsed((previous) => !previous)}
+          onClick={onClose ?? (() => setCollapsed((previous) => !previous))}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={
+            onClose
+              ? "Close navigation"
+              : collapsed
+                ? "Expand sidebar"
+                : "Collapse sidebar"
+          }
           aria-expanded={!collapsed}
         >
-          {collapsed ? (
+          {onClose ? (
+            <X size={17} />
+          ) : collapsed ? (
             <PanelLeftOpen size={17} />
           ) : (
             <PanelLeftClose size={17} />
@@ -103,16 +118,11 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* User profile */}
-      <div
-        className="sidebar-profile"
-        title={collapsed ? `${userName} · ${userRole}` : undefined}
-      >
-        <div className="profile-avatar">{userInitial}</div>
-
+      <div className="sidebar-profile">
+        <GraduationCap size={21} aria-hidden="true" />
         <div className="profile-info sidebar-label">
-          <strong>{userName}</strong>
-          <span>{userRole}</span>
+          <strong>School workspace</strong>
+          <span>{userRole} access</span>
         </div>
       </div>
 
@@ -136,7 +146,7 @@ export default function Sidebar({
                 }`}
                 onClick={() => onNavigate(label)}
               >
-                <Icon size={18} aria-hidden="true" />
+                <Icon size={20} strokeWidth={1.65} aria-hidden="true" />
 
                 <span className="sidebar-label">{label}</span>
               </button>
@@ -147,6 +157,19 @@ export default function Sidebar({
 
       {/* Bottom actions */}
       <div className="sidebar-bottom">
+        <div className="sidebar-help sidebar-label">
+          <Sparkles size={18} />
+          <strong>A little help goes a long way.</strong>
+          <p>We’re here for your school.</p>
+          <button
+            type="button"
+            onClick={() =>
+              window.alert("Please contact your school administrator for help.")
+            }
+          >
+            Visit help center <ArrowUpRight size={14} />
+          </button>
+        </div>
         {/* Theme toggle */}
         <button
           type="button"
@@ -179,18 +202,27 @@ export default function Sidebar({
           </button>
         )}
 
-        {/* Logout available to authenticated users */}
-        <button
-          type="button"
-          className="sidebar-item logout"
-          onClick={onLogout}
-          title={collapsed ? "Logout" : undefined}
-          aria-label="Logout"
+        {/* User profile */}
+        <div
+          className="sidebar-account"
+          title={collapsed ? `${userName} · ${userRole}` : undefined}
         >
-          <LogOut size={18} />
+          <div className="profile-avatar">{userInitial}</div>
 
-          <span className="sidebar-label">Logout</span>
-        </button>
+          <div className="profile-info sidebar-label">
+            <strong>{userName}</strong>
+            <span>{userRole}</span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-collapse"
+            onClick={onLogout}
+            aria-label="Logout"
+            title="Logout"
+          >
+            <LogOut size={17} />
+          </button>
+        </div>
       </div>
     </aside>
   );

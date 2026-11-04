@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bell,
+  ChevronRight,
+  Menu,
   Search,
   ChevronDown,
   Settings,
@@ -9,14 +11,29 @@ import {
   CheckCheck,
 } from "lucide-react";
 
+import { canAccessPage } from "../../auth/permissions";
 import type { AuthUser } from "../../auth/auth-api";
 import "./Header.css";
 
 type HeaderProps = {
   pageTitle: string;
+  onOpenNavigation?: () => void;
   onNavigate?: (page: string) => void;
   onLogout: () => void;
   user: AuthUser | null;
+};
+
+const subtitles: Record<string, string> = {
+  Dashboard: "Here's what's happening at your school today.",
+  Classes: "A little structure. A world of possibilities.",
+  Students: "Every student, every milestone, all in one place.",
+  "Student Detail": "A closer look at your student’s learning journey.",
+  Teachers: "Meet the people making a difference.",
+  Attendance: "Every day counts. Keep track of who’s here.",
+  Grades: "Turn progress into possibility.",
+  Schedule: "A clear view of the week ahead.",
+  Settings: "Make ClassFlow work your way.",
+  Login: "Welcome back to ClassFlow.",
 };
 
 type OpenMenu = "notifications" | "user" | null;
@@ -44,10 +61,20 @@ const initialNotifications = [
 
 export default function Header({
   pageTitle,
+  onOpenNavigation,
   onNavigate,
   onLogout,
   user,
 }: HeaderProps) {
+  const [query, setQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
+  const matches = Object.keys(subtitles).filter(
+    (name) =>
+      name !== "Login" &&
+      name !== "Student Detail" &&
+      canAccessPage(user, name) &&
+      name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [notifications, setNotifications] = useState(initialNotifications);
 
@@ -82,7 +109,19 @@ export default function Header({
     };
   }, [openMenu]);
 
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        search.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, []);
+
   const goTo = (page: string) => {
+    setQuery("");
     onNavigate?.(page);
     setOpenMenu(null);
   };
@@ -94,20 +133,64 @@ export default function Header({
 
   return (
     <header className="app-header">
-      <div className="header-title">
-        <h1>{pageTitle}</h1>
-        <p>Welcome back! Here's what's happening today.</p>
+      <div className="header-leading">
+        {onOpenNavigation && (
+          <button
+            type="button"
+            className="header-menu-button"
+            aria-label="Open navigation"
+            onClick={onOpenNavigation}
+          >
+            <Menu size={22} />
+          </button>
+        )}
+        <div className="header-title">
+          <div className="header-breadcrumb">
+            Workspace <ChevronRight size={12} /> {pageTitle}
+          </div>
+          <h1>{pageTitle}</h1>
+          <p>{subtitles[pageTitle]}</p>
+        </div>
       </div>
 
       <div className="header-actions">
-        <div className="search-box">
+        <div
+          className="search-box"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget))
+              setQuery("");
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setQuery("");
+          }}
+        >
           <Search size={18} aria-hidden="true" />
           <input
+            ref={search}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && query.trim() && matches.length)
+                goTo(matches[0]);
+            }}
             type="search"
             aria-label="Search"
             placeholder="Search anything..."
           />
-          <span className="search-shortcut">Search</span>
+          <kbd className="search-shortcut">Ctrl K</kbd>
+          {query.trim() && (
+            <section className="search-pages" aria-label="Matching pages">
+              {matches.length ? (
+                matches.map((name) => (
+                  <button type="button" key={name} onClick={() => goTo(name)}>
+                    {name}
+                  </button>
+                ))
+              ) : (
+                <p>No matching pages</p>
+              )}
+            </section>
+          )}
         </div>
 
         <div className="header-popovers" ref={popoverRef}>
@@ -197,6 +280,7 @@ export default function Header({
               }
             >
               <span className="header-avatar">{userInitial}</span>
+              <span className="header-user-name">{userName}</span>
               <ChevronDown size={16} />
             </button>
 

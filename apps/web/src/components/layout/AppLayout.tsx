@@ -1,5 +1,5 @@
 import { confirmAttendanceNavigation } from "../../lib/unsaved-changes";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import DashboardPage from "../../features/dashboard/DashboardPage";
 import ClassesPage from "../../features/classes/ClassesPage";
@@ -16,14 +16,26 @@ import { useAuth } from "../../auth/auth-context";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
+const mobileLayout = window.matchMedia("(max-width: 760px)");
+function subscribeToLayout(listener: () => void) {
+  mobileLayout.addEventListener("change", listener);
+  return () => mobileLayout.removeEventListener("change", listener);
+}
+
 type AppLayoutProps = {
   children: ReactNode;
 };
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [activePage, setActivePage] = useState("Dashboard");
+  const [studentDetail, setStudentDetail] = useState(false);
   const [isDark, setIsDark] = useState(true);
 
+  const mobile = useSyncExternalStore(
+    subscribeToLayout,
+    () => mobileLayout.matches,
+  );
+  const drawer = useRef<HTMLDialogElement>(null);
   const { user, logout } = useAuth();
 
   const handleNavigate = (page: string) => {
@@ -33,6 +45,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
 
     if (page !== activePage && !confirmAttendanceNavigation()) return;
+    drawer.current?.close();
+    if (page !== activePage) setStudentDetail(false);
     setActivePage(page);
   };
 
@@ -69,7 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         return <ClassesPage />;
 
       case "Students":
-        return <StudentsPage />;
+        return <StudentsPage onDetailChange={setStudentDetail} />;
 
       case "Teachers":
         return <TeachersPage />;
@@ -93,20 +107,44 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
+  const sidebar = (
+    <Sidebar
+      onClose={mobile ? () => drawer.current?.close() : undefined}
+      activePage={activePage}
+      onNavigate={handleNavigate}
+      isDark={isDark}
+      onToggleTheme={handleToggleTheme}
+      onLogout={handleLogout}
+      user={user}
+    />
+  );
   return (
     <div className={`app-container ${isDark ? "dark-theme" : "light-theme"}`}>
-      <Sidebar
-        activePage={activePage}
-        onNavigate={handleNavigate}
-        isDark={isDark}
-        onToggleTheme={handleToggleTheme}
-        onLogout={handleLogout}
-        user={user}
-      />
+      {mobile ? (
+        <dialog
+          ref={drawer}
+          className="navigation-drawer"
+          aria-label="Workspace navigation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) drawer.current?.close();
+          }}
+        >
+          {sidebar}
+        </dialog>
+      ) : (
+        sidebar
+      )}
 
       <div className="app-main">
         <Header
-          pageTitle={activePage}
+          onOpenNavigation={
+            mobile ? () => drawer.current?.showModal() : undefined
+          }
+          pageTitle={
+            activePage === "Students" && studentDetail
+              ? "Student Detail"
+              : activePage
+          }
           onNavigate={handleNavigate}
           onLogout={handleLogout}
           user={user}

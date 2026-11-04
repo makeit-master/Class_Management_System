@@ -1,7 +1,7 @@
 /* Sidebar styles scoped to the layout component. */
 .app-container .sidebar {
-  width: 250px;
-  min-width: 250px;
+  width: clamp(240px, 16.25vw, 312px);
+  min-width: clamp(240px, 16.25vw, 312px);
   height: 100vh;
   height: 100dvh;
   min-height: 0;
@@ -11,9 +11,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 20px 14px 14px;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  padding: 36px 24px 0;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
   transition:
     width 0.2s ease,
     min-width 0.2s ease;
@@ -30,18 +30,18 @@
   gap: 10px;
   padding: 0 3px 0 6px;
   margin-bottom: 24px;
-  font-size: 18px;
+  font-size: 25px;
   font-weight: 800;
   min-height: 36px;
 }
 .app-container .logo-icon {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   color: #fff;
-  background: var(--primary);
+  background: var(--primary-fill);
   border-radius: 10px;
 }
 .app-container .sidebar-brand {
@@ -56,14 +56,14 @@
   height: 30px;
   border: 0;
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--secondary);
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
 }
 .app-container .sidebar-collapse:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: var(--elevated);
+  color: var(--text);
 }
 .app-container .sidebar-profile {
   display: flex;
@@ -71,8 +71,8 @@
   gap: 12px;
   padding: 12px;
   margin-bottom: 18px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 14px;
   min-width: 0;
 }
@@ -99,7 +99,7 @@
 }
 .app-container .profile-info span {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--muted);
   white-space: nowrap;
 }
 .app-container .sidebar-nav {
@@ -108,7 +108,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 .app-container .menu-section {
   margin-bottom: 22px;
@@ -116,7 +116,7 @@
 .app-container .menu-section-title {
   padding: 0 12px;
   margin: 0 0 10px;
-  color: var(--text-muted);
+  color: var(--muted);
   font-weight: 700;
   font-size: 10px;
   letter-spacing: 1.2px;
@@ -129,7 +129,7 @@
   gap: 12px;
   padding: 11px 12px;
   margin-bottom: 4px;
-  color: var(--text-secondary);
+  color: var(--secondary);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 9px;
@@ -145,13 +145,13 @@
   flex-shrink: 0;
 }
 .app-container .sidebar-item:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
+  color: var(--text);
+  background: var(--elevated);
 }
 .app-container .sidebar-item.active {
-  color: var(--primary);
-  background: var(--bg-tertiary);
-  border-color: var(--border-color);
+  color: var(--violet);
+  background: var(--violet-bg);
+  border-color: transparent;
   position: relative;
 }
 .app-container .sidebar-item.active::before {
@@ -161,13 +161,13 @@
   top: 25%;
   height: 50%;
   width: 3px;
-  background: var(--primary);
+  background: var(--violet);
   border-radius: 0 4px 4px 0;
 }
 .app-container .sidebar-bottom {
   flex-shrink: 0;
   padding-top: 12px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 .app-container .sidebar-item.logout {
   color: #ef4444;
@@ -206,36 +206,112 @@
   padding: 0;
   font-size: 10px;
 }
-@media (max-width: 700px) {
-  .app-container .sidebar:not(.sidebar--collapsed) {
-    width: 76px;
-    min-width: 76px;
-    padding-inline: 10px;
+
+.brand-dot {
+  color: var(--violet);
+}
+.sidebar-help {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--violet-bg), transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 11px;
+}
+.sidebar-help svg {
+  color: var(--violet);
+}
+.sidebar-help strong {
+  display: block;
+  margin-top: 10px;
+}
+.sidebar-help p {
+  color: var(--muted);
+}
+.sidebar-help button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--violet);
+  padding: 0;
+  font-size: 10px;
+}
+.sidebar-account {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.sidebar-account .profile-info {
+  flex: 1;
+}
+.app-container .profile-avatar {
+  background: var(--violet-bg);
+  color: var(--violet);
+  width: 32px;
+  height: 32px;
+}
+.sidebar--collapsed .sidebar-account {
+  flex-direction: column;
+}
+.navigation-drawer {
+  inset: 0 auto 0 0;
+  margin: 0;
+  max-height: 100dvh;
+  max-width: 90vw;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+}
+.navigation-drawer::backdrop {
+  background: #0009;
+  backdrop-filter: blur(3px);
+}
+@media (max-width: 1200px) {
+  .app-container .sidebar {
+    width: 215px;
+    min-width: 215px;
+    padding-inline: 16px;
   }
-  .app-container .sidebar:not(.sidebar--collapsed) .sidebar-label {
+}
+@media (max-width: 760px) {
+  .app-container .sidebar {
+    width: 255px;
+    min-width: 0;
+  }
+}
+@media (max-height: 880px) {
+  .sidebar-help {
     display: none;
   }
-  .app-container .sidebar:not(.sidebar--collapsed) .sidebar-profile {
-    padding: 7px;
-    justify-content: center;
-  }
-  .app-container .sidebar:not(.sidebar--collapsed) .sidebar-logo {
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 7px;
-    padding: 0;
-  }
-  .app-container .sidebar:not(.sidebar--collapsed) .sidebar-collapse {
-    margin: 0;
-  }
-  .app-container .sidebar:not(.sidebar--collapsed) .sidebar-item {
-    justify-content: center;
-    padding: 11px 0;
-  }
-  .app-container .sidebar:not(.sidebar--collapsed) .menu-section-title {
-    text-align: center;
-    padding: 0;
-    font-size: 10px;
-  }
+}
+
+.app-container .sidebar-logo {
+  position: relative;
+  padding-left: 0;
+  gap: 8px;
+  letter-spacing: -0.8px;
+}
+.app-container
+  .sidebar:not(.sidebar--collapsed)
+  .sidebar-logo
+  .sidebar-collapse {
+  position: absolute;
+  right: -18px;
+  width: 20px;
+}
+.app-container .sidebar-brand {
+  font-size: clamp(21px, 1.7vw, 25px);
+}
+.app-container .sidebar-nav .sidebar-item {
+  min-height: 47px;
+}
+.app-container .sidebar-logo {
+  margin-bottom: 32px;
+}
+.app-container .sidebar-profile {
+  margin-bottom: 30px;
 }

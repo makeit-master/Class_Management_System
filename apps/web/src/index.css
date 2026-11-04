@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap");
 
 :root {
   font-family: "Inter", sans-serif;
@@ -19,10 +19,80 @@ body {
 }
 
 button,
+select,
+textarea,
 input {
   font: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #09090b;
+  --sidebar: #0c0c0f;
+  --surface: #111114;
+  --elevated: #17171c;
+  --border: #232329;
+  --border-soft: #1d1d23;
+  --text: #f3f3f5;
+  --secondary: #9b9ba8;
+  --muted: #6d6d7c;
+  --violet: #a68aff;
+  --violet-bg: #8b5cf615;
+  --green: #4aca94;
+  --green-bg: #22c55e13;
+  --blue: #6b9df6;
+  --blue-bg: #3b82f615;
+  --orange: #e9ac5c;
+  --orange-bg: #f59e0b12;
+  --pink: #e590bf;
+  --pink-bg: #ec489914;
+  --red: #f47d80;
+  --red-bg: #ef444415;
+}
+
+.light-theme,
+.cf-login--light {
+  color-scheme: light;
+  --bg: #f8f9fb;
+  --sidebar: #fff;
+  --surface: #fff;
+  --elevated: #f3f4f6;
+  --border: #e5e7eb;
+  --border-soft: #eef0f3;
+  --text: #171b29;
+  --secondary: #646b79;
+  --muted: #8b91a0;
+  --violet: #7950d6;
+  --violet-bg: #8b5cf611;
+  --green: #19945c;
+  --green-bg: #22c55e13;
+  --blue: #397cd7;
+  --blue-bg: #3b82f611;
+  --orange: #bd811b;
+  --orange-bg: #f59e0b13;
+  --pink: #bc578d;
+  --pink-bg: #ec489910;
+  --red: #d64a52;
+  --red-bg: #ef444412;
+}
+:root {
+  --primary-fill: linear-gradient(110deg, #9362ed, #7062e8);
+  --primary-hover-fill: linear-gradient(110deg, #a277f3, #8376ef);
+  --card-radius: 13px;
+}
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }
