@@ -1,3 +1,4 @@
+import PageToolbar from "../../components/ui/PageToolbar";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import {
@@ -586,16 +587,15 @@ export default function ClassesPage() {
     <div className="classes-ui">
       {/* TOOLBAR */}
 
-      <div className="classes-toolbar">
-        <div>
-          <h2>
+      <PageToolbar
+        title={
+          <>
             {isArchivedView ? "Archived classes" : "All classes"}{" "}
             <span className="classes-count">{pagination.total} classes</span>
-          </h2>
-
-          <p>Manage your classes and keep learning on track.</p>
-        </div>
-
+          </>
+        }
+        subtitle="Manage your classes and keep learning on track."
+      >
         {isAdmin && !isArchivedView && (
           <button
             type="button"
@@ -606,7 +606,7 @@ export default function ClassesPage() {
             New Class
           </button>
         )}
-      </div>
+      </PageToolbar>
 
       {/* ACTIVE / ARCHIVED TABS */}
       {isAdmin && (

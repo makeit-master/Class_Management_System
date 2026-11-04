@@ -1,3 +1,4 @@
+import PageToolbar from "../../components/ui/PageToolbar";
 import { useEffect, useState, type FormEvent } from "react";
 
 import {
@@ -163,6 +164,7 @@ function StudentDetailView({
   onRetry,
   onEdit,
 }: StudentDetailViewProps) {
+  const [section, setSection] = useState("Overview");
   return (
     <div className="student-detail">
       <button type="button" className="students-back" onClick={onBack}>
@@ -205,9 +207,11 @@ function StudentDetailView({
 
               <p>{student.studentCode}</p>
 
-              <span className="students-status students-status-active">
+              <span
+                className={`students-status ${student.archivedAt ? "students-status-archived" : "students-status-active"}`}
+              >
                 <i />
-                Active
+                {student.archivedAt ? "Archived" : "Active"}
               </span>
             </div>
 
@@ -223,171 +227,195 @@ function StudentDetailView({
             )}
           </section>
 
-          <div className="student-detail-grid">
-            {/* PERSONAL INFORMATION */}
+          <nav
+            className="student-profile-sections"
+            aria-label="Student profile sections"
+          >
+            {["Overview", "Enrollments", "Notes"].map((label) => (
+              <button
+                type="button"
+                key={label}
+                aria-pressed={section === label}
+                onClick={() => setSection(label)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          {section === "Overview" && (
+            <div className="student-detail-grid">
+              {/* PERSONAL INFORMATION */}
 
-            <section className="students-panel student-detail-section">
-              <h3>
-                <UserRound size={18} />
-                Personal Information
-              </h3>
+              <section className="students-panel student-detail-section">
+                <h3>
+                  <UserRound size={18} />
+                  Personal Information
+                </h3>
 
-              <dl className="student-detail-fields">
-                <div>
-                  <dt>Full name</dt>
-                  <dd>{student.fullName}</dd>
-                </div>
+                <dl className="student-detail-fields">
+                  <div>
+                    <dt>Full name</dt>
+                    <dd>{student.fullName}</dd>
+                  </div>
 
-                <div>
-                  <dt>Student code</dt>
-                  <dd>{student.studentCode}</dd>
-                </div>
+                  <div>
+                    <dt>Student code</dt>
+                    <dd>{student.studentCode}</dd>
+                  </div>
 
-                <div>
-                  <dt>Date of birth</dt>
-                  <dd>
-                    {student.dateOfBirth
-                      ? formatDate(student.dateOfBirth)
-                      : "Not provided"}
-                  </dd>
-                </div>
+                  <div>
+                    <dt>Date of birth</dt>
+                    <dd>
+                      {student.dateOfBirth
+                        ? formatDate(student.dateOfBirth)
+                        : "Not provided"}
+                    </dd>
+                  </div>
 
-                <div>
-                  <dt>Gender</dt>
-                  <dd>
-                    {student.gender === "MALE"
-                      ? "Male"
-                      : student.gender === "FEMALE"
-                        ? "Female"
-                        : student.gender === "OTHER"
-                          ? "Other"
-                          : "Not specified"}
-                  </dd>
-                </div>
+                  <div>
+                    <dt>Gender</dt>
+                    <dd>
+                      {student.gender === "MALE"
+                        ? "Male"
+                        : student.gender === "FEMALE"
+                          ? "Female"
+                          : student.gender === "OTHER"
+                            ? "Other"
+                            : "Not specified"}
+                    </dd>
+                  </div>
 
-                <div>
-                  <dt>Email</dt>
-                  <dd>{student.email || "Not provided"}</dd>
-                </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{student.email || "Not provided"}</dd>
+                  </div>
 
-                <div>
-                  <dt>Phone</dt>
-                  <dd>{student.phone || "Not provided"}</dd>
-                </div>
+                  <div>
+                    <dt>Phone</dt>
+                    <dd>{student.phone || "Not provided"}</dd>
+                  </div>
 
-                <div className="student-detail-field-full">
-                  <dt>Address</dt>
-                  <dd>{student.address || "Not provided"}</dd>
-                </div>
-              </dl>
-            </section>
+                  <div className="student-detail-field-full">
+                    <dt>Address</dt>
+                    <dd>{student.address || "Not provided"}</dd>
+                  </div>
+                </dl>
+              </section>
 
-            {/* GUARDIAN */}
+              {/* GUARDIAN */}
 
-            <section className="students-panel student-detail-section">
-              <h3>
-                <Phone size={18} />
-                Parent / Guardian
-              </h3>
+              <section className="students-panel student-detail-section">
+                <h3>
+                  <Phone size={18} />
+                  Parent / Guardian
+                </h3>
 
-              <dl className="student-detail-fields">
-                <div>
-                  <dt>Guardian name</dt>
-                  <dd>{student.parentName || "Not provided"}</dd>
-                </div>
+                <dl className="student-detail-fields">
+                  <div>
+                    <dt>Guardian name</dt>
+                    <dd>{student.parentName || "Not provided"}</dd>
+                  </div>
 
-                <div>
-                  <dt>Guardian phone</dt>
-                  <dd>{student.parentPhone || "Not provided"}</dd>
-                </div>
-              </dl>
+                  <div>
+                    <dt>Guardian phone</dt>
+                    <dd>{student.parentPhone || "Not provided"}</dd>
+                  </div>
+                </dl>
 
-              <div className="student-detail-divider" />
+                <div className="student-detail-divider" />
 
-              <h3>
-                <CalendarDays size={18} />
-                Record Information
-              </h3>
+                <h3>
+                  <CalendarDays size={18} />
+                  Record Information
+                </h3>
 
-              <dl className="student-detail-fields">
-                <div>
-                  <dt>Created</dt>
-                  <dd>{formatDate(student.createdAt)}</dd>
-                </div>
+                <dl className="student-detail-fields">
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{formatDate(student.createdAt)}</dd>
+                  </div>
 
-                <div>
-                  <dt>Last updated</dt>
-                  <dd>{formatDate(student.updatedAt)}</dd>
-                </div>
-              </dl>
-            </section>
-          </div>
+                  <div>
+                    <dt>Last updated</dt>
+                    <dd>{formatDate(student.updatedAt)}</dd>
+                  </div>
+                </dl>
+              </section>
+            </div>
+          )}
 
           {/* ENROLLMENTS */}
 
-          <section className="students-panel student-detail-section">
-            <div className="student-detail-section-heading">
-              <h3>
-                <BookOpen size={18} />
-                Enrolled Classes
-              </h3>
+          {section === "Enrollments" && (
+            <section className="students-panel student-detail-section">
+              <div className="student-detail-section-heading">
+                <h3>
+                  <BookOpen size={18} />
+                  Enrolled Classes
+                </h3>
 
-              <span className="students-count">
-                {student.enrollments.length} classes
-              </span>
-            </div>
-
-            {student.enrollments.length === 0 ? (
-              <div className="student-detail-empty">
-                <BookOpen size={26} />
-                <p>This student is not enrolled in any active class.</p>
+                <span className="students-count">
+                  {student.enrollments.length} classes
+                </span>
               </div>
-            ) : (
-              <div className="student-detail-class-list">
-                {student.enrollments.map((enrollment) => (
-                  <article className="student-detail-class" key={enrollment.id}>
-                    <div>
-                      <strong>{enrollment.class.name}</strong>
 
-                      <p>
-                        {enrollment.class.subject || "Subject not assigned"}
-                      </p>
-                    </div>
+              {student.enrollments.length === 0 ? (
+                <div className="student-detail-empty">
+                  <BookOpen size={26} />
+                  <p>This student is not enrolled in any active class.</p>
+                </div>
+              ) : (
+                <div className="student-detail-class-list">
+                  {student.enrollments.map((enrollment) => (
+                    <article
+                      className="student-detail-class"
+                      key={enrollment.id}
+                    >
+                      <div>
+                        <strong>{enrollment.class.name}</strong>
 
-                    <div className="student-detail-class-meta">
-                      <span>
-                        <UserRound size={14} />
-                        {enrollment.class.teacher.user.fullName}
-                      </span>
+                        <p>
+                          {enrollment.class.subject || "Subject not assigned"}
+                        </p>
+                      </div>
 
-                      <span>
-                        <MapPin size={14} />
-                        {enrollment.class.room || "Room not assigned"}
-                      </span>
+                      <div className="student-detail-class-meta">
+                        <span>
+                          <UserRound size={14} />
+                          {enrollment.class.teacher.user.fullName}
+                        </span>
 
-                      <span>
-                        <CalendarDays size={14} />
-                        Enrolled {formatDate(enrollment.enrolledAt)}
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
+                        <span>
+                          <MapPin size={14} />
+                          {enrollment.class.room || "Room not assigned"}
+                        </span>
+
+                        <span>
+                          <CalendarDays size={14} />
+                          Enrolled {formatDate(enrollment.enrolledAt)}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* NOTES */}
 
-          <section className="students-panel student-detail-section">
-            <h3>
-              <Pencil size={18} />
-              Student Notes
-            </h3>
+          {section === "Notes" && (
+            <section className="students-panel student-detail-section">
+              <h3>
+                <Pencil size={18} />
+                Student Notes
+              </h3>
 
-            <p className="student-detail-notes">
-              {student.notes || "No notes have been added."}
-            </p>
-          </section>
+              <p className="student-detail-notes">
+                {student.notes || "No notes have been added."}
+              </p>
+            </section>
+          )}
         </>
       )}
     </div>
@@ -398,7 +426,11 @@ function StudentDetailView({
 // STUDENTS PAGE
 // ============================================================
 
-export default function StudentsPage() {
+export default function StudentsPage({
+  onDetailChange,
+}: {
+  onDetailChange: (open: boolean) => void;
+}) {
   const { user, token } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
@@ -686,10 +718,12 @@ export default function StudentsPage() {
     setStudentDetail(null);
     setDetailError("");
     setDetailId(student.id);
+    onDetailChange(true);
   }
 
   function closeStudentDetail() {
     setDetailId(null);
+    onDetailChange(false);
     setStudentDetail(null);
     setDetailError("");
   }
@@ -820,21 +854,15 @@ export default function StudentsPage() {
         <>
           {/* HEADER */}
 
-          <div className="students-topbar">
-            <div>
-              <div className="students-eyebrow">
-                <Users size={14} />
-                STUDENT MANAGEMENT
-              </div>
-
-              <h2>
+          <PageToolbar
+            title={
+              <>
                 All students{" "}
                 <span className="students-count">{total} students</span>
-              </h2>
-
-              <p>Manage students and keep learning on track.</p>
-            </div>
-
+              </>
+            }
+            subtitle="A community of curious minds."
+          >
             <div className="students-toolbar-actions">
               <button
                 type="button"
@@ -857,7 +885,7 @@ export default function StudentsPage() {
                 </button>
               )}
             </div>
-          </div>
+          </PageToolbar>
 
           {/* ACTIVE / ARCHIVED TABS */}
           {isAdmin && (

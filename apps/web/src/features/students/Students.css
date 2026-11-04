@@ -1,29 +1,9 @@
 /* Isolated Students module. Theme follows the existing .dark-theme/.light-theme wrapper. */
 .students-page {
-  --sp-bg: #191a26;
-  --sp-card: #20212e;
-  --sp-text: #efedf8;
-  --sp-muted: #9694ab;
-  --sp-line: #303144;
-  --sp-input: #232434;
-  --sp-hover: #2b2b3e;
-  --sp-accent: #9b7cf8;
-  --sp-violet: #352a5b;
-  color: var(--sp-text);
+  color: var(--text);
   padding: 5px 2px 36px;
   min-width: 0;
   font-size: 14px;
-}
-.light-theme .students-page,
-.app.light .students-page {
-  --sp-bg: #f7f7fc;
-  --sp-card: #fff;
-  --sp-text: #242337;
-  --sp-muted: #85859b;
-  --sp-line: #e9e8f2;
-  --sp-input: #f8f8fc;
-  --sp-hover: #f3f0ff;
-  --sp-violet: #f1eaff;
 }
 .students-page * {
   box-sizing: border-box;
@@ -45,7 +25,7 @@
   margin-bottom: 26px;
 }
 .students-eyebrow {
-  color: var(--sp-accent);
+  color: var(--violet);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -67,13 +47,13 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  background: var(--sp-violet);
-  color: var(--sp-accent);
+  background: var(--violet-bg);
+  color: var(--violet);
   letter-spacing: 0;
   margin-left: 7px;
 }
 .students-topbar p {
-  color: var(--sp-muted);
+  color: var(--secondary);
   margin: 0;
   font-size: 13px;
 }
@@ -83,27 +63,27 @@
   flex-wrap: wrap;
 }
 .students-btn {
-  border: 1px solid var(--sp-line);
-  color: var(--sp-text);
+  border: 1px solid var(--border);
+  color: var(--text);
   padding: 10px 15px;
   display: inline-flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: var(--sp-card);
+  background: var(--surface);
   font-weight: 650;
   white-space: nowrap;
 }
 .students-btn:hover:not(:disabled) {
-  background: var(--sp-hover);
+  background: var(--elevated);
 }
 .students-btn:disabled {
   opacity: 0.45;
   cursor: default;
 }
 .students-btn-primary {
-  background: #895cf1;
+  background: var(--primary-fill);
   border-color: #895cf1;
   color: white;
 }
@@ -116,9 +96,9 @@
   border-color: #ef485c;
 }
 .students-panel {
-  background: var(--sp-card);
-  border: 1px solid var(--sp-line);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   box-shadow: 0 7px 25px rgba(0, 0, 0, 0.025);
   min-width: 0;
 }
@@ -130,7 +110,7 @@
   gap: 12px;
   padding: 20px;
   align-items: center;
-  border-bottom: 1px solid var(--sp-line);
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 .students-search {
@@ -139,11 +119,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--sp-input);
-  border: 1px solid var(--sp-line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0 13px;
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 .students-search input {
   width: 100%;
@@ -152,20 +132,20 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--sp-text);
+  color: var(--text);
 }
 .students-filters > select {
   min-width: 142px;
-  color: var(--sp-text);
-  background: var(--sp-input);
-  border: 1px solid var(--sp-line);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 11px;
   outline: none;
 }
 .students-results {
   margin-left: auto;
-  color: var(--sp-muted);
+  color: var(--secondary);
   white-space: nowrap;
   font-size: 12px;
 }
@@ -178,21 +158,21 @@
   min-width: 860px;
 }
 .students-table th {
-  color: var(--sp-muted);
+  color: var(--secondary);
   text-align: left;
   font-size: 11px;
   font-weight: 750;
-  background: var(--sp-input);
+  background: var(--surface);
   padding: 14px 15px;
   white-space: nowrap;
 }
 .students-table td {
   padding: 16px 15px;
-  border-top: 1px solid var(--sp-line);
+  border-top: 1px solid var(--border);
   vertical-align: middle;
 }
 .students-table tbody tr:hover {
-  background: var(--sp-hover);
+  background: var(--elevated);
 }
 .students-table input[type="checkbox"] {
   accent-color: #9271ef;
@@ -207,7 +187,7 @@
   background: transparent;
   border: 0;
   padding: 0;
-  color: var(--sp-text);
+  color: var(--text);
 }
 .students-person span:last-child {
   display: grid;
@@ -218,7 +198,7 @@
   white-space: nowrap;
 }
 .students-person small {
-  color: var(--sp-muted);
+  color: var(--secondary);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -258,12 +238,12 @@
   border-radius: 19px;
 }
 .students-muted {
-  color: var(--sp-muted);
+  color: var(--secondary);
   font-size: 12px;
 }
 .students-class-pill {
-  border: 1px solid var(--sp-line);
-  background: var(--sp-input);
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 7px;
   padding: 7px 9px;
   font-size: 12px;
@@ -285,7 +265,7 @@
 .students-progress {
   height: 5px;
   width: 100px;
-  background: var(--sp-line);
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -298,7 +278,7 @@
 .students-grade {
   color: #b19bff;
   font-weight: 800;
-  background: var(--sp-violet);
+  background: var(--violet-bg);
   border-radius: 7px;
   padding: 6px 10px;
 }
@@ -332,13 +312,13 @@
   display: inline-grid;
   place-items: center;
   border: 0;
-  color: var(--sp-muted);
+  color: var(--secondary);
   background: transparent;
   padding: 7px;
   border-radius: 8px;
 }
 .students-icon-btn:hover {
-  background: var(--sp-hover);
+  background: var(--elevated);
 }
 .students-row-menu {
   z-index: 10;
@@ -346,8 +326,8 @@
   right: 0;
   top: 100%;
   min-width: 155px;
-  background: var(--sp-card);
-  border: 1px solid var(--sp-line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   box-shadow: 0 12px 35px #0003;
   border-radius: 10px;
   padding: 6px;
@@ -359,12 +339,12 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--sp-text);
+  color: var(--text);
   text-align: left;
   white-space: nowrap;
 }
 .students-row-menu button:hover {
-  background: var(--sp-hover);
+  background: var(--elevated);
 }
 .students-danger {
   color: #ef6678 !important;
@@ -376,9 +356,9 @@
   padding: 17px 20px;
   gap: 12px;
   flex-wrap: wrap;
-  color: var(--sp-muted);
+  color: var(--secondary);
   font-size: 12px;
-  border-top: 1px solid var(--sp-line);
+  border-top: 1px solid var(--border);
 }
 .students-pagination > div {
   display: flex;
@@ -390,28 +370,28 @@
   font-size: 12px;
 }
 .students-page-number {
-  color: var(--sp-accent);
+  color: var(--violet);
   padding: 7px 9px;
-  background: var(--sp-violet);
+  background: var(--violet-bg);
   border-radius: 8px;
 }
 .students-empty {
   text-align: center;
   padding: 55px 20px;
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 .students-back {
   border: 0;
   display: flex;
   align-items: center;
   gap: 9px;
-  color: var(--sp-muted);
+  color: var(--secondary);
   background: transparent;
   margin: 0 0 23px;
   padding: 4px 0;
 }
 .students-back:hover {
-  color: var(--sp-accent);
+  color: var(--violet);
 }
 .students-profile {
   display: flex;
@@ -427,14 +407,14 @@
   font-size: 24px;
 }
 .students-profile-info p {
-  color: var(--sp-muted);
+  color: var(--secondary);
   margin: 0 0 12px;
 }
 .students-profile-info > span {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: var(--sp-muted);
+  color: var(--secondary);
   font-size: 12px;
 }
 .students-detail-stats {
@@ -449,7 +429,7 @@
   gap: 9px;
 }
 .students-detail-stats small {
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 .students-detail-stats strong {
   font-size: 25px;
@@ -461,18 +441,18 @@
   margin: 0 0 9px;
 }
 .students-notes p {
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 .students-notes textarea {
   display: block;
   width: 100%;
   resize: vertical;
-  background: var(--sp-input);
-  border: 1px solid var(--sp-line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
   margin-top: 16px;
-  color: var(--sp-text);
+  color: var(--text);
 }
 .students-overlay {
   position: fixed;
@@ -485,11 +465,11 @@
 }
 .students-modal {
   width: min(100%, 465px);
-  background: var(--sp-card);
-  color: var(--sp-text);
+  background: var(--surface);
+  color: var(--text);
   padding: 27px;
   border-radius: 17px;
-  border: 1px solid var(--sp-line);
+  border: 1px solid var(--border);
   box-shadow: 0 30px 90px #0005;
   max-height: 90vh;
   overflow-y: auto;
@@ -506,7 +486,7 @@
 }
 .students-modal p {
   margin: 0 0 24px;
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 .students-modal form {
   display: grid;
@@ -520,9 +500,9 @@
 }
 .students-modal input,
 .students-modal select {
-  color: var(--sp-text);
-  background: var(--sp-input);
-  border: 1px solid var(--sp-line);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 9px;
   padding: 12px;
   outline: none;
@@ -530,7 +510,7 @@
 }
 .students-modal input:focus,
 .students-modal select:focus {
-  border-color: var(--sp-accent);
+  border-color: var(--violet);
 }
 .students-modal-actions {
   display: flex;
@@ -547,17 +527,17 @@
   gap: 20px;
   justify-content: space-between;
   padding: 12px 16px;
-  color: var(--sp-text);
-  border: 1px solid var(--sp-line);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-left: 3px solid #9070ee;
   border-radius: 9px;
-  background: var(--sp-card);
+  background: var(--surface);
   margin-bottom: 18px;
 }
 .students-toast button {
   background: transparent;
   border: 0;
-  color: var(--sp-muted);
+  color: var(--secondary);
 }
 @media (max-width: 900px) {
   .students-topbar {
@@ -1072,4 +1052,22 @@
 .students-row-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.student-profile-sections {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.student-profile-sections button {
+  padding: 12px 0;
+  color: var(--secondary);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+}
+.student-profile-sections button[aria-pressed="true"] {
+  color: var(--violet);
+  border-color: var(--violet);
 }

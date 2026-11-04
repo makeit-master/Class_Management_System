@@ -1,47 +1,8 @@
-/* Scoped Figma Make Dashboard styles. Does not affect the existing Sidebar/Header. */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 .dashboard-figma {
-  --bg: #09090b;
-  --sidebar: #0c0c0f;
-  --surface: #111114;
-  --elevated: #17171c;
-  --border: #232329;
-  --border-soft: #1d1d23;
-  --text: #f3f3f5;
-  --secondary: #9b9ba8;
-  --muted: #6d6d7c;
-  --violet: #a68aff;
-  --violet-bg: #8b5cf615;
-  --green: #4aca94;
-  --green-bg: #22c55e13;
-  --blue: #6b9df6;
-  --blue-bg: #3b82f615;
-  --orange: #e9ac5c;
-  --orange-bg: #f59e0b12;
-  --pink: #e590bf;
-  --pink-bg: #ec489914;
-  --red: #f47d80;
-  --red-bg: #ef444415;
   color: var(--text);
   font-family: Inter, sans-serif;
   font-size: 13px;
   min-width: 0;
-}
-.light-theme .dashboard-figma {
-  --bg: #f8f9fb;
-  --surface: #fff;
-  --elevated: #f3f4f6;
-  --border: #e5e7eb;
-  --border-soft: #eef0f3;
-  --text: #171b29;
-  --secondary: #646b79;
-  --muted: #8b91a0;
-  --violet: #7950d6;
-  --violet-bg: #8b5cf611;
-  --green: #19945c;
-  --blue: #397cd7;
-  --orange: #bd811b;
-  --red: #d64a52;
 }
 .dashboard-figma button,
 .dashboard-figma input,
@@ -194,7 +155,7 @@
 }
 .dashboard-figma .button.primary {
   border-color: #a481f040;
-  background: linear-gradient(110deg, #9362ed, #7062e8);
+  background: var(--primary-fill);
   color: white;
   box-shadow: 0 2px 4px #00000010;
 }
@@ -238,7 +199,7 @@
 .dashboard-figma .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: var(--card-radius);
   min-width: 0;
 }
 .dashboard-figma .light .card {
@@ -979,7 +940,7 @@
     padding-top: 26px;
   }
   .dashboard-figma .card {
-    border-radius: 15px;
+    border-radius: var(--card-radius);
   }
 }
 @media (max-width: 1200px) {
@@ -1288,5 +1249,175 @@
   }
   .dashboard-figma .page-toolbar:has(+ .calendar-card) {
     flex-direction: column;
+  }
+}
+
+@media (min-width: 1100px) {
+  .dashboard-figma {
+    display: grid;
+    grid-template-rows: 48px 144px 320px 288px 20px;
+    gap: 20px;
+    padding: 0;
+  }
+  .dashboard-figma > .dashboard-toolbar,
+  .dashboard-figma > .stats-grid,
+  .dashboard-figma > .dashboard-middle {
+    margin-bottom: 0;
+  }
+  .dashboard-figma > .dashboard-middle,
+  .dashboard-figma > .dashboard-bottom {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .dashboard-figma .card {
+    min-height: 0;
+  }
+  .dashboard-figma .greeting h2 {
+    font-size: 21px;
+    margin-top: 7px;
+  }
+  .dashboard-figma .eyebrow {
+    font-size: 9px;
+  }
+  .dashboard-figma .stat-card {
+    padding: 16px 24px;
+  }
+  .dashboard-figma .stat-top {
+    font-size: 12px;
+  }
+  .dashboard-figma .stat-top .icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+  .dashboard-figma .stat-top .icon-tile svg {
+    width: 19px;
+    height: 19px;
+  }
+  .dashboard-figma .stat-main {
+    margin-top: 2px;
+  }
+  .dashboard-figma .stat-value {
+    font-size: 36px;
+  }
+  .dashboard-figma .stat-footer {
+    margin-top: 10px;
+  }
+  .dashboard-figma .section-heading {
+    padding: 19px 24px 0;
+    flex-shrink: 0;
+  }
+  .dashboard-figma .section-heading h3 {
+    font-size: 15px;
+  }
+  .dashboard-figma .section-heading p {
+    font-size: 10px;
+    margin-top: 5px;
+  }
+  .dashboard-figma .attendance-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-figma .chart-summary {
+    padding: 9px 24px 0;
+  }
+  .dashboard-figma .chart-summary > strong {
+    font-size: 29px;
+  }
+  .dashboard-figma .line-chart {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    padding: 13px 24px 0;
+  }
+  .dashboard-figma .chart-legend {
+    margin-top: 13px;
+    padding: 12px 24px;
+  }
+  .dashboard-figma .class-timeline {
+    padding: 4px 24px 0;
+  }
+  .dashboard-figma .upcoming-class {
+    height: 77px;
+    padding: 9px 0;
+    gap: 12px;
+  }
+  .dashboard-figma .class-title-row {
+    margin-top: 5px;
+  }
+  .dashboard-figma .class-title-row h4 {
+    font-size: 13px;
+  }
+  .dashboard-figma .class-time {
+    font-size: 9px;
+    line-height: 12px;
+  }
+  .dashboard-figma .class-teacher {
+    margin-top: 5px;
+    font-size: 10px;
+  }
+  .dashboard-figma .class-teacher .avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 7px;
+  }
+  .dashboard-figma .card-footer-link {
+    padding: 12px 24px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .dashboard-figma .activity-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-figma .activity-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 5px 24px 0;
+    min-height: 0;
+  }
+  .dashboard-figma .activity-item {
+    flex: 1;
+    min-height: 0;
+    padding: 8px 0;
+  }
+  .dashboard-figma .activity-icon {
+    width: 29px;
+    height: 29px;
+    border-radius: 8px;
+  }
+  .dashboard-figma .activity-copy p {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .dashboard-figma .activity-copy > span {
+    font-size: 9px;
+    margin-top: 3px;
+  }
+  .dashboard-figma .activity-item time {
+    font-size: 8px;
+  }
+  .dashboard-figma .performance-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 7px 24px;
+  }
+  .dashboard-figma .performance-row {
+    flex: 1;
+    padding: 6px 0;
+  }
+  .dashboard-figma .performance-label {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .dashboard-figma .performance-note {
+    padding: 12px 24px;
+    font-size: 9px;
+  }
+  .dashboard-figma .dashboard-foot {
+    padding-top: 0;
+    font-size: 9px;
   }
 }

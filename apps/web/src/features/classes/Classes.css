@@ -1,33 +1,9 @@
 /* ClassFlow Classes page: scoped to avoid affecting the existing layout and Dashboard. */
 .classes-ui {
-  --c-surface: #fff;
-  --c-border: #e6e8ee;
-  --c-text: #171b29;
-  --c-muted: #8992a5;
-  --c-secondary: #667085;
-  --c-elevated: #f4f5f8;
-  --c-violet: #8056e9;
-  --c-blue: #4f8ce4;
-  --c-orange: #d39430;
-  --c-green: #2b9c72;
-  --c-pink: #cc72aa;
-  color: var(--c-text);
+  color: var(--text);
   font-size: 13px;
   padding-bottom: 32px;
   min-width: 0;
-}
-.dark-theme .classes-ui {
-  --c-surface: #15151a;
-  --c-border: #292932;
-  --c-text: #f3f3f5;
-  --c-muted: #79798b;
-  --c-secondary: #aaaabc;
-  --c-elevated: #1e1e26;
-  --c-violet: #a68aff;
-  --c-blue: #6b9df6;
-  --c-orange: #e9ac5c;
-  --c-green: #4aca94;
-  --c-pink: #e590bf;
 }
 .classes-ui *,
 .classes-ui *::before,
@@ -62,16 +38,16 @@
 }
 .classes-toolbar p {
   margin: 8px 0 0;
-  color: var(--c-secondary);
+  color: var(--secondary);
 }
 .classes-count {
   font-size: 11px;
   letter-spacing: 0;
-  border: 1px solid var(--c-border);
-  background: var(--c-elevated);
+  border: 1px solid var(--border);
+  background: var(--elevated);
   padding: 5px 9px;
   border-radius: 6px;
-  color: var(--c-secondary);
+  color: var(--secondary);
   font-weight: 600;
 }
 .classes-primary {
@@ -82,7 +58,7 @@
   padding: 11px 17px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: #8056e9;
+  background: var(--primary-fill);
   color: #fff;
   font-weight: 650;
   white-space: nowrap;
@@ -103,9 +79,9 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  color: var(--c-muted);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
   padding: 0 13px;
   border-radius: 8px;
   height: 42px;
@@ -113,19 +89,19 @@
 .classes-search input {
   border: 0;
   background: transparent;
-  color: var(--c-text);
+  color: var(--text);
   width: 100%;
   min-width: 0;
   outline: none;
 }
 .classes-search input::placeholder {
-  color: var(--c-muted);
+  color: var(--muted);
 }
 .classes-filters select {
   height: 42px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  color: var(--c-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--secondary);
   border-radius: 8px;
   padding: 0 15px;
   min-width: 135px;
@@ -133,24 +109,24 @@
 .classes-view-switch {
   margin-left: auto;
   display: flex;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
   padding: 4px;
-  background: var(--c-surface);
+  background: var(--surface);
 }
 .classes-view-switch button {
   width: 33px;
   height: 30px;
   border: 0;
   background: transparent;
-  color: var(--c-muted);
+  color: var(--muted);
   border-radius: 6px;
   display: grid;
   place-items: center;
 }
 .classes-view-switch button.selected {
-  background: var(--c-elevated);
-  color: var(--c-violet);
+  background: var(--elevated);
+  color: var(--violet);
 }
 .classes-grid {
   display: grid;
@@ -158,9 +134,9 @@
   gap: 20px;
 }
 .classes-card {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   min-width: 0;
   padding: 22px 22px 0;
   display: flex;
@@ -182,26 +158,26 @@
   color: var(--accent);
 }
 .classes-violet {
-  --accent: var(--c-violet);
+  --accent: var(--violet);
 }
 .classes-blue {
-  --accent: var(--c-blue);
+  --accent: var(--blue);
 }
 .classes-orange {
-  --accent: var(--c-orange);
+  --accent: var(--orange);
 }
 .classes-green {
-  --accent: var(--c-green);
+  --accent: var(--green);
 }
 .classes-pink {
-  --accent: var(--c-pink);
+  --accent: var(--pink);
 }
 .classes-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--c-green);
-  background: color-mix(in srgb, var(--c-green) 10%, transparent);
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
   padding: 6px 9px;
   border-radius: 6px;
   font-size: 11px;
@@ -209,7 +185,7 @@
 .classes-status span {
   width: 5px;
   height: 5px;
-  background: var(--c-green);
+  background: var(--green);
   border-radius: 50%;
 }
 .classes-card h3 {
@@ -219,7 +195,7 @@
 }
 .classes-subject {
   margin: 0;
-  color: var(--c-muted);
+  color: var(--muted);
   font-size: 12px;
 }
 .classes-teacher {
@@ -229,7 +205,7 @@
   margin: 23px 0;
 }
 .classes-avatar {
-  --accent: var(--c-violet);
+  --accent: var(--violet);
   width: 35px;
   height: 35px;
   border-radius: 50%;
@@ -242,16 +218,16 @@
   flex-shrink: 0;
 }
 .classes-avatar.classes-blue {
-  --accent: var(--c-blue);
+  --accent: var(--blue);
 }
 .classes-avatar.classes-orange {
-  --accent: var(--c-orange);
+  --accent: var(--orange);
 }
 .classes-avatar.classes-green {
-  --accent: var(--c-green);
+  --accent: var(--green);
 }
 .classes-avatar.classes-pink {
-  --accent: var(--c-pink);
+  --accent: var(--pink);
 }
 .classes-teacher strong {
   display: block;
@@ -261,16 +237,16 @@
 .classes-teacher small {
   display: block;
   margin-top: 4px;
-  color: var(--c-muted);
+  color: var(--muted);
   font-size: 11px;
 }
 .classes-metadata {
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
   padding-top: 17px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px 18px;
-  color: var(--c-secondary);
+  color: var(--secondary);
   font-size: 11px;
 }
 .classes-metadata span {
@@ -282,17 +258,17 @@
   display: flex;
   justify-content: space-between;
   margin: 23px 0 10px;
-  color: var(--c-muted);
+  color: var(--muted);
   font-size: 11px;
 }
 .classes-progress-title b {
-  color: var(--c-text);
+  color: var(--text);
   font-size: 11px;
 }
 .classes-progress {
   width: 100%;
   height: 6px;
-  background: var(--c-elevated);
+  background: var(--elevated);
   overflow: hidden;
   border-radius: 999px;
   margin-bottom: 21px;
@@ -300,16 +276,16 @@
 .classes-fill {
   display: block;
   height: 100%;
-  background: var(--accent, var(--c-violet));
+  background: var(--accent, var(--violet));
   border-radius: 999px;
 }
 .classes-detail {
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
   padding: 13px 0;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
-  color: var(--c-secondary);
+  color: var(--secondary);
 }
 .classes-detail span {
   display: flex;
@@ -319,8 +295,8 @@
 .classes-details-button {
   border: 0;
   background: transparent;
-  border-top: 1px solid var(--c-border);
-  color: var(--c-secondary);
+  border-top: 1px solid var(--border);
+  color: var(--secondary);
   width: calc(100% + 44px);
   margin: auto -22px 0;
   padding: 15px 20px;
@@ -330,20 +306,20 @@
   align-items: center;
 }
 .classes-details-button:hover {
-  color: var(--c-violet);
-  background: var(--c-elevated);
+  color: var(--violet);
+  background: var(--elevated);
 }
 
 .classes-empty {
   text-align: center;
-  border: 1px dashed var(--c-border);
+  border: 1px dashed var(--border);
   border-radius: 14px;
   padding: 48px 18px;
-  background: var(--c-surface);
-  color: var(--c-muted);
+  background: var(--surface);
+  color: var(--muted);
 }
 .classes-empty h3 {
-  color: var(--c-text);
+  color: var(--text);
 }
 .classes-modal-overlay {
   position: fixed;
@@ -359,11 +335,11 @@
   max-height: min(90vh, 820px);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--c-border) transparent;
+  scrollbar-color: var(--border) transparent;
   padding: 26px;
-  background: var(--c-surface);
-  color: var(--c-text);
-  border: 1px solid var(--c-border);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 24px 80px #0003;
 }
@@ -373,7 +349,7 @@
   justify-content: space-between;
   gap: 15px;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 21px;
 }
 .classes-modal-header h2 {
@@ -381,13 +357,13 @@
   font-size: 21px;
 }
 .classes-modal-header p {
-  color: var(--c-secondary);
+  color: var(--secondary);
   margin: 7px 0 0;
 }
 .classes-modal-header > button {
   border: 0;
   background: none;
-  color: var(--c-secondary);
+  color: var(--secondary);
 }
 .classes-modal form {
   display: flex;
@@ -405,18 +381,18 @@
 .classes-modal input,
 .classes-modal select,
 .classes-modal textarea {
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   padding: 11px 12px;
   border-radius: 8px;
   outline: none;
-  color: var(--c-text);
-  background: var(--c-elevated);
+  color: var(--text);
+  background: var(--elevated);
   width: 100%;
 }
 .classes-modal input:focus,
 .classes-modal select:focus,
 .classes-modal textarea:focus {
-  border-color: var(--c-violet);
+  border-color: var(--violet);
 }
 .classes-form-row {
   display: flex;
@@ -429,11 +405,11 @@
   margin-top: 14px;
 }
 .classes-modal-actions > button:first-child {
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   padding: 10px 16px;
   border-radius: 8px;
-  background: var(--c-surface);
-  color: var(--c-secondary);
+  background: var(--surface);
+  color: var(--secondary);
 }
 @media (max-width: 1200px) {
   .classes-grid {
@@ -475,7 +451,7 @@
   gap: 12px;
   margin: 18px -22px 0;
   padding: 12px 22px;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
 }
 
 .classes-card-actions .classes-details-button {
@@ -490,7 +466,7 @@
   padding: 9px 0;
   border: 0;
   background: transparent;
-  color: var(--c-secondary);
+  color: var(--secondary);
   font-size: 12px;
   line-height: 1.4;
   text-align: left;
@@ -506,7 +482,7 @@
 }
 
 .classes-card-actions .classes-details-button:hover {
-  color: var(--c-violet);
+  color: var(--violet);
 }
 
 .classes-edit-button {
@@ -517,24 +493,24 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
 }
 
 .classes-edit-button:hover {
-  color: var(--c-violet);
-  border-color: var(--c-violet);
-  background: color-mix(in srgb, var(--c-violet) 10%, var(--c-surface));
+  color: var(--violet);
+  border-color: var(--violet);
+  background: color-mix(in srgb, var(--violet) 10%, var(--surface));
 }
 
 .classes-edit-button:focus-visible,
 .classes-card-actions .classes-details-button:focus-visible {
-  outline: 2px solid var(--c-violet);
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
 }
 
@@ -550,11 +526,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 11px 12px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 8px;
   outline: none;
-  background: var(--c-elevated);
-  color: var(--c-text);
+  background: var(--elevated);
+  color: var(--text);
   font: inherit;
   font-size: 13px;
   line-height: 1.5;
@@ -569,8 +545,8 @@
 }
 
 .classes-modal select option {
-  background: var(--c-surface);
-  color: var(--c-text);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .classes-modal textarea {
@@ -581,13 +557,13 @@
 .classes-modal input:focus,
 .classes-modal select:focus,
 .classes-modal textarea:focus {
-  border-color: var(--c-violet);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-violet) 14%, transparent);
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 14%, transparent);
 }
 
 .classes-modal input::placeholder,
 .classes-modal textarea::placeholder {
-  color: var(--c-muted);
+  color: var(--muted);
 }
 
 .classes-modal select:disabled,
@@ -609,7 +585,7 @@
   width: 6px;
 }
 .classes-modal::-webkit-scrollbar-thumb {
-  background: var(--c-border);
+  background: var(--border);
   border-radius: 999px;
 }
 
@@ -631,7 +607,7 @@
   margin-left: -22px;
   margin-right: -22px;
   padding: 12px 22px;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
 }
 
 .classes-card-actions .classes-details-button {
@@ -654,11 +630,11 @@
   height: 36px;
   flex: 0 0 36px;
 
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
 
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
 
   cursor: pointer;
 
@@ -675,7 +651,7 @@
 }
 
 .classes-archive-button:focus-visible {
-  outline: 2px solid var(--c-violet);
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
 }
 
@@ -688,10 +664,10 @@
 
   padding: 28px;
 
-  background: var(--c-surface);
-  color: var(--c-text);
+  background: var(--surface);
+  color: var(--text);
 
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 16px;
 
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
@@ -723,13 +699,13 @@
 .classes-archive-modal p {
   margin: 0 0 16px;
 
-  color: var(--c-secondary);
+  color: var(--secondary);
   line-height: 1.65;
   font-size: 13px;
 }
 
 .classes-archive-modal p strong {
-  color: var(--c-text);
+  color: var(--text);
   font-weight: 700;
 }
 
@@ -738,11 +714,11 @@
 .classes-archive-modal .classes-archive-note {
   padding: 12px 14px;
 
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
 
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
   font-size: 12px;
 }
 
@@ -790,13 +766,13 @@
 }
 
 .classes-archive-cancel {
-  background: var(--c-surface);
-  color: var(--c-secondary);
-  border: 1px solid var(--c-border);
+  background: var(--surface);
+  color: var(--secondary);
+  border: 1px solid var(--border);
 }
 
 .classes-archive-cancel:hover {
-  background: var(--c-elevated);
+  background: var(--elevated);
 }
 
 .classes-archive-confirm {
@@ -858,7 +834,7 @@
 
   min-height: 160px;
   padding: 22px 24px 0;
-  border-radius: 14px;
+  border-radius: var(--card-radius);
   overflow: hidden;
 }
 
@@ -943,7 +919,7 @@
 
   margin-top: 12px;
   padding: 14px 0;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
 }
 
 /* Footer with Details, Edit and Archive */
@@ -961,7 +937,7 @@
   margin: 10px -24px 0;
   padding: 12px 24px;
 
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
 }
 
 .classes-grid.is-list .classes-card-actions .classes-details-button {
@@ -976,14 +952,14 @@
 
   border: 0;
   background: transparent;
-  color: var(--c-secondary);
+  color: var(--secondary);
 
   font-size: 12px;
   white-space: nowrap;
 }
 
 .classes-grid.is-list .classes-card-actions .classes-details-button:hover {
-  color: var(--c-violet);
+  color: var(--violet);
 }
 
 .classes-grid.is-list .classes-admin-actions {
@@ -1100,7 +1076,7 @@
 }
 
 .classes-grid:not(.is-list) .classes-metadata {
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
   padding: 16px 0 10px;
   margin: 0;
 }
@@ -1112,7 +1088,7 @@
 .classes-grid:not(.is-list) .classes-card-actions {
   margin: auto -22px 0;
   padding: 12px 22px;
-  border-top: 1px solid var(--c-border);
+  border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1159,7 +1135,7 @@
   gap: 8px;
   margin: -4px 0 22px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--border);
 }
 
 .classes-status-tabs button {
@@ -1173,7 +1149,7 @@
   border-radius: 8px;
 
   background: transparent;
-  color: var(--c-secondary);
+  color: var(--secondary);
 
   font: inherit;
   font-weight: 600;
@@ -1186,32 +1162,32 @@
 }
 
 .classes-status-tabs button:hover {
-  background: var(--c-elevated);
-  color: var(--c-text);
+  background: var(--elevated);
+  color: var(--text);
 }
 
 .classes-status-tabs button.active {
-  background: color-mix(in srgb, var(--c-violet) 12%, var(--c-surface));
+  background: color-mix(in srgb, var(--violet) 12%, var(--surface));
 
-  color: var(--c-violet);
+  color: var(--violet);
 
-  border-color: color-mix(in srgb, var(--c-violet) 28%, transparent);
+  border-color: color-mix(in srgb, var(--violet) 28%, transparent);
 }
 
 .classes-status-tabs button:focus-visible {
-  outline: 2px solid var(--c-violet);
+  outline: 2px solid var(--violet);
   outline-offset: 3px;
 }
 
 /* Archived status badge */
 
 .classes-status.is-archived {
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
 }
 
 .classes-status.is-archived span {
-  background: var(--c-muted);
+  background: var(--muted);
 }
 
 @media (max-width: 520px) {
@@ -1240,12 +1216,12 @@
   min-height: 36px;
   padding: 0 13px;
 
-  border: 1px solid color-mix(in srgb, var(--c-green) 30%, var(--c-border));
+  border: 1px solid color-mix(in srgb, var(--green) 30%, var(--border));
   border-radius: 9px;
 
-  background: color-mix(in srgb, var(--c-green) 10%, var(--c-surface));
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
 
-  color: var(--c-green);
+  color: var(--green);
   font: inherit;
   font-weight: 650;
   font-size: 12px;
@@ -1254,11 +1230,11 @@
 }
 
 .classes-restore-button:hover {
-  background: color-mix(in srgb, var(--c-green) 17%, var(--c-surface));
+  background: color-mix(in srgb, var(--green) 17%, var(--surface));
 }
 
 .classes-restore-button:focus-visible {
-  outline: 2px solid var(--c-green);
+  outline: 2px solid var(--green);
   outline-offset: 3px;
 }
 
@@ -1271,10 +1247,10 @@
 
   padding: 28px;
 
-  background: var(--c-surface);
-  color: var(--c-text);
+  background: var(--surface);
+  color: var(--text);
 
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 16px;
 
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
@@ -1291,8 +1267,8 @@
 
   border-radius: 12px;
 
-  color: var(--c-green);
-  background: color-mix(in srgb, var(--c-green) 12%, transparent);
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 
 .classes-restore-modal h2 {
@@ -1303,21 +1279,21 @@
 
 .classes-restore-modal p {
   margin: 0 0 16px;
-  color: var(--c-secondary);
+  color: var(--secondary);
   line-height: 1.65;
 }
 
 .classes-restore-modal p strong {
-  color: var(--c-text);
+  color: var(--text);
 }
 
 .classes-restore-note {
   padding: 12px 14px;
 
-  background: var(--c-elevated);
-  color: var(--c-secondary);
+  background: var(--elevated);
+  color: var(--secondary);
 
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 9px;
 
   font-size: 12px;
@@ -1387,9 +1363,9 @@
 .classes-enrollment-section {
   margin-top: 28px;
   padding: 22px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--c-surface);
+  background: var(--surface);
 }
 
 .classes-enrollment-section-header {
@@ -1404,7 +1380,7 @@
 .classes-enrollment-eyebrow {
   display: block;
   margin-bottom: 8px;
-  color: var(--c-violet);
+  color: var(--violet);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -1412,14 +1388,14 @@
 
 .classes-enrollment-section-header h3 {
   margin: 0;
-  color: var(--c-text);
+  color: var(--text);
   font-size: 20px;
   font-weight: 700;
 }
 
 .classes-enrollment-section-header p {
   margin: 7px 0 0;
-  color: var(--c-secondary);
+  color: var(--secondary);
   font-size: 13px;
 }
 
@@ -1429,15 +1405,15 @@
   justify-content: center;
   gap: 7px;
   padding: 9px 13px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--c-elevated);
-  color: var(--c-text);
+  background: var(--elevated);
+  color: var(--text);
   font-weight: 600;
 }
 
 .classes-enrollment-close:hover {
-  border-color: var(--c-violet);
+  border-color: var(--violet);
 }
 
 @media (max-width: 640px) {

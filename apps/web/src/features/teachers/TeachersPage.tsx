@@ -1,9 +1,9 @@
+import PageToolbar from "../../components/ui/PageToolbar";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   BookOpen,
   Check,
   ChevronDown,
-  GraduationCap,
   Mail,
   Pencil,
   Plus,
@@ -266,17 +266,10 @@ export default function TeachersPage() {
 
   return (
     <div className="teachers-page">
-      <div className="teachers-topbar">
-        <div>
-          <div className="teachers-eyebrow">
-            <GraduationCap size={14} /> OUR EDUCATORS
-          </div>
-          <h2>
-            Our teaching community{" "}
-            <span className="teachers-count">{teachers.length} teachers</span>
-          </h2>
-          <p>Passionate educators. Lasting impact.</p>
-        </div>
+      <PageToolbar
+        title="Our teaching community"
+        subtitle="Passionate educators. Lasting impact."
+      >
         <button
           type="button"
           className="teachers-btn teachers-btn-primary"
@@ -285,7 +278,7 @@ export default function TeachersPage() {
           <Plus size={17} />
           Add Teacher
         </button>
-      </div>
+      </PageToolbar>
 
       <div className="teachers-toolbar">
         <label className="teachers-search">
