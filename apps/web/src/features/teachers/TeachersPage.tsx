@@ -1,269 +1,149 @@
 import PageToolbar from "../../components/ui/PageToolbar";
-import { useMemo, useState, type FormEvent } from "react";
-import {
-  BookOpen,
-  Check,
-  ChevronDown,
-  Mail,
-  Pencil,
-  Plus,
-  Search,
-  Star,
-  Trash2,
-  Users,
-  X,
-} from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Plus, Search, Pencil, X } from "lucide-react";
+import { useAuth } from "../../auth/auth-context";
+import { apiClient } from "../../lib/api-client";
 import "./Teachers.css";
 
 type Teacher = {
   id: string;
-  name: string;
-  subject: string;
-  email: string;
-  phone: string;
-  classes: string[];
-  studentCount: number;
-  experience: number;
-  color: string;
-  status: "Available" | "Busy";
-  rating: number;
+  employeeCode: string | null;
+  subject: string | null;
+  phone: string | null;
+  bio: string | null;
+  user: { fullName: string; email: string; isActive: boolean };
+  classes: { id: string; name: string; archivedAt: string | null }[];
 };
-
-type TeacherDraft = Pick<
-  Teacher,
-  "name" | "subject" | "email" | "phone" | "experience" | "status"
->;
-
-const initialTeachers: Teacher[] = [
-  {
-    id: "TCH-001",
-    name: "Nguyễn Thị Lan",
-    subject: "Mathematics",
-    email: "lan.nguyen@greenwood.edu",
-    phone: "028 5550 0201",
-    classes: ["Math 10A1"],
-    studentCount: 32,
-    experience: 8,
-    color: "violet",
-    status: "Available",
-    rating: 4.9,
-  },
-  {
-    id: "TCH-002",
-    name: "David Mitchell",
-    subject: "Physics",
-    email: "david.mitchell@greenwood.edu",
-    phone: "028 5550 0202",
-    classes: ["Physics 11B2"],
-    studentCount: 28,
-    experience: 7,
-    color: "blue",
-    status: "Available",
-    rating: 4.8,
-  },
-  {
-    id: "TCH-003",
-    name: "Sarah Johnson",
-    subject: "English Language",
-    email: "sarah.johnson@greenwood.edu",
-    phone: "028 5550 0203",
-    classes: ["English 10A2"],
-    studentCount: 30,
-    experience: 9,
-    color: "orange",
-    status: "Busy",
-    rating: 4.7,
-  },
-  {
-    id: "TCH-004",
-    name: "Trần Văn Minh",
-    subject: "Chemistry",
-    email: "minh.tran@greenwood.edu",
-    phone: "028 5550 0204",
-    classes: ["Chemistry 12A1"],
-    studentCount: 26,
-    experience: 6,
-    color: "green",
-    status: "Available",
-    rating: 4.9,
-  },
-  {
-    id: "TCH-005",
-    name: "Emily Parker",
-    subject: "Biology",
-    email: "emily.parker@greenwood.edu",
-    phone: "028 5550 0205",
-    classes: ["Biology 11A1"],
-    studentCount: 31,
-    experience: 10,
-    color: "pink",
-    status: "Available",
-    rating: 4.8,
-  },
-  {
-    id: "TCH-006",
-    name: "Lê Thanh Hà",
-    subject: "World History",
-    email: "ha.le@greenwood.edu",
-    phone: "028 5550 0206",
-    classes: ["History 12B1"],
-    studentCount: 29,
-    experience: 11,
-    color: "violet",
-    status: "Available",
-    rating: 4.7,
-  },
-  {
-    id: "TCH-007",
-    name: "Michael Brown",
-    subject: "Computer Science",
-    email: "michael.brown@greenwood.edu",
-    phone: "028 5550 0207",
-    classes: ["Computer Science 11A2"],
-    studentCount: 34,
-    experience: 5,
-    color: "blue",
-    status: "Busy",
-    rating: 4.9,
-  },
-  {
-    id: "TCH-008",
-    name: "Võ Ngọc Linh",
-    subject: "Literature",
-    email: "linh.vo@greenwood.edu",
-    phone: "028 5550 0208",
-    classes: ["Literature 12A2"],
-    studentCount: 30,
-    experience: 7,
-    color: "pink",
-    status: "Available",
-    rating: 4.8,
-  },
-];
-
-const blankDraft: TeacherDraft = {
-  name: "",
-  subject: "",
+type Directory = {
+  items: Teacher[];
+  pagination: { total: number; totalPages: number };
+};
+const blank = {
+  fullName: "",
   email: "",
+  employeeCode: "",
+  subject: "",
   phone: "",
-  experience: 0,
-  status: "Available",
+  bio: "",
+  password: "",
 };
-
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export default function TeachersPage() {
-  const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
+  const { token, user } = useAuth();
+  const [data, setData] = useState<Directory | null>(null);
   const [query, setQuery] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("All subjects");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [page, setPage] = useState(1);
+  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<Teacher | null>(null);
   const [editing, setEditing] = useState<Teacher | null>(null);
-  const [draft, setDraft] = useState<TeacherDraft>(blankDraft);
-  const [showForm, setShowForm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
-  const [message, setMessage] = useState("");
-
-  const subjects = useMemo(
-    () => Array.from(new Set(teachers.map((t) => t.subject))).sort(),
-    [teachers],
-  );
-  const filtered = useMemo(
-    () =>
-      teachers.filter((t) => {
-        const searchMatch = `${t.name} ${t.subject} ${t.email} ${t.id}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase());
-        return (
-          searchMatch &&
-          (subjectFilter === "All subjects" || t.subject === subjectFilter) &&
-          (statusFilter === "All statuses" || t.status === statusFilter)
-        );
-      }),
-    [teachers, query, subjectFilter, statusFilter],
-  );
-
-  const inform = (text: string) => setMessage(text);
-  const beginAdd = () => {
-    setEditing(null);
-    setDraft(blankDraft);
-    setShowForm(true);
-  };
-  const beginEdit = (teacher: Teacher) => {
-    setEditing(teacher);
-    setDraft({
-      name: teacher.name,
-      subject: teacher.subject,
-      email: teacher.email,
-      phone: teacher.phone,
-      experience: teacher.experience,
-      status: teacher.status,
-    });
-    setSelected(null);
-    setShowForm(true);
-  };
-  const saveTeacher = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!draft.name.trim() || !draft.subject.trim() || !draft.email.trim())
-      return;
-    const duplicate = teachers.some(
-      (t) =>
-        t.email.toLowerCase() === draft.email.trim().toLowerCase() &&
-        t.id !== editing?.id,
-    );
-    if (duplicate) {
-      inform("Email này đã được sử dụng bởi một giáo viên khác.");
-      return;
-    }
-    const payload = {
-      ...draft,
-      name: draft.name.trim(),
-      subject: draft.subject.trim(),
-      email: draft.email.trim(),
-      phone: draft.phone.trim(),
-      experience: Math.max(0, Number(draft.experience) || 0),
+  const [form, setForm] = useState(false);
+  const [draft, setDraft] = useState(blank);
+  const [target, setTarget] = useState<Teacher | null>(null);
+  useEffect(() => {
+    if (user?.role !== "ADMIN") return;
+    let ignore = false;
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      setError("");
+      apiClient<Directory>(
+        `/teachers?page=${page}&limit=12&search=${encodeURIComponent(query)}`,
+        { token },
+      )
+        .then((d) => {
+          if (!ignore) {
+            if (!d.items.length && page > 1) setPage(page - 1);
+            else setData(d);
+          }
+        })
+        .catch((e) => {
+          if (!ignore) setError(e.message);
+        })
+        .finally(() => {
+          if (!ignore) setLoading(false);
+        });
+    }, 200);
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
     };
-    if (editing) {
-      setTeachers((prev) =>
-        prev.map((t) => (t.id === editing.id ? { ...t, ...payload } : t)),
-      );
-      inform("Teacher information updated.");
-    } else {
-      const nextId =
-        Math.max(
-          0,
-          ...teachers.map((t) => Number(t.id.replace("TCH-", "")) || 0),
-        ) + 1;
-      setTeachers((prev) => [
-        ...prev,
-        {
-          ...payload,
-          id: `TCH-${String(nextId).padStart(3, "0")}`,
-          classes: [],
-          studentCount: 0,
-          color: "violet",
-          rating: 0,
-        },
-      ]);
-      inform("Teacher added to the directory.");
-    }
-    setShowForm(false);
-  };
-  const removeTeacher = () => {
-    if (!deleteTarget) return;
-    setTeachers((prev) => prev.filter((t) => t.id !== deleteTarget.id));
+  }, [token, user?.role, page, query, refresh]);
+  if (user?.role !== "ADMIN")
+    return (
+      <div className="teachers-empty">
+        Teacher management is available to administrators only.
+      </div>
+    );
+  function begin(t: Teacher | null) {
+    setEditing(t);
+    setDraft(
+      t
+        ? {
+            ...blank,
+            fullName: t.user.fullName,
+            email: t.user.email,
+            employeeCode: t.employeeCode ?? "",
+            subject: t.subject ?? "",
+            phone: t.phone ?? "",
+            bio: t.bio ?? "",
+          }
+        : blank,
+    );
     setSelected(null);
-    setDeleteTarget(null);
-    inform("Teacher removed from the demo directory.");
-  };
-
+    setFormError("");
+    setForm(true);
+  }
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setFormError("");
+    try {
+      const { password, ...fields } = draft;
+      await apiClient(`/teachers${editing ? `/${editing.id}` : ""}`, {
+        token,
+        method: editing ? "PATCH" : "POST",
+        body: JSON.stringify(editing ? fields : { ...fields, password }),
+      });
+      setForm(false);
+      setDraft(blank);
+      setMessage(editing ? "Teacher updated." : "Teacher account created.");
+      setRefresh((v) => v + 1);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Unable to save teacher.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function changeStatus() {
+    if (!target) return;
+    setBusy(true);
+    setFormError("");
+    try {
+      await apiClient(
+        `/teachers/${target.id}/${target.user.isActive ? "deactivate" : "reactivate"}`,
+        { token, method: "PATCH" },
+      );
+      setMessage("Teacher status updated.");
+      setTarget(null);
+      setRefresh((v) => v + 1);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Unable to update status.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function profile(t: Teacher) {
+    setError("");
+    try {
+      setSelected(await apiClient<Teacher>(`/teachers/${t.id}`, { token }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load profile.");
+    }
+  }
+  const button = "teachers-btn teachers-btn-secondary";
   return (
     <div className="teachers-page">
       <PageToolbar
@@ -271,421 +151,296 @@ export default function TeachersPage() {
         subtitle="Passionate educators. Lasting impact."
       >
         <button
-          type="button"
           className="teachers-btn teachers-btn-primary"
-          onClick={beginAdd}
+          onClick={() => begin(null)}
         >
           <Plus size={17} />
           Add Teacher
         </button>
       </PageToolbar>
-
       <div className="teachers-toolbar">
         <label className="teachers-search">
           <Search size={17} />
           <input
             aria-label="Search teachers"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
             placeholder="Search teachers, subjects, emails..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
           />
         </label>
-        <label className="teachers-filter">
-          <select
-            aria-label="Filter by subject"
-            value={subjectFilter}
-            onChange={(e) => setSubjectFilter(e.target.value)}
-          >
-            <option>All subjects</option>
-            {subjects.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-          <ChevronDown size={14} />
-        </label>
-        <label className="teachers-filter">
-          <select
-            aria-label="Filter by status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option>All statuses</option>
-            <option>Available</option>
-            <option>Busy</option>
-          </select>
-          <ChevronDown size={14} />
-        </label>
         <span className="teachers-results">
-          {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+          {data?.pagination.total ?? 0} teachers
         </span>
       </div>
-
-      {filtered.length ? (
-        <div className="teachers-grid">
-          {filtered.map((t) => (
-            <article className="teachers-card" key={t.id}>
-              <div
-                className={`teachers-status ${t.status === "Busy" ? "is-busy" : ""}`}
-              >
-                <span />
-                {t.status}
-              </div>
-              <div className={`teachers-avatar teachers-color-${t.color}`}>
-                {initials(t.name)}
-              </div>
-              <h3>{t.name}</h3>
-              <p className="teachers-subject">{t.subject}</p>
-              <div className="teachers-rating">
-                <Star size={14} fill="currentColor" />
-                {t.rating ? t.rating.toFixed(1) : "New"}
-                {t.rating > 0 && <span>· demo rating</span>}
-              </div>
-              <div className="teachers-stats">
-                <div>
-                  <strong>{t.classes.length}</strong>
-                  <span>Classes</span>
-                </div>
-                <div>
-                  <strong>{t.studentCount}</strong>
-                  <span>Students</span>
-                </div>
-                <div>
-                  <strong>{t.experience}</strong>
-                  <span>Years exp.</span>
-                </div>
-              </div>
-              <div className="teachers-card-actions">
-                <button
-                  type="button"
-                  className="teachers-btn teachers-btn-secondary"
-                  onClick={() => setSelected(t)}
-                >
-                  <BookOpen size={15} />
-                  View profile
-                </button>
-                <a
-                  className="teachers-icon-btn"
-                  href={`mailto:${t.email}`}
-                  aria-label={`Email ${t.name}`}
-                  title="Email"
-                >
-                  <Mail size={17} />
-                </a>
-                <button
-                  type="button"
-                  className="teachers-icon-btn"
-                  onClick={() => beginEdit(t)}
-                  aria-label={`Edit ${t.name}`}
-                  title="Edit"
-                >
-                  <Pencil size={16} />
-                </button>
-              </div>
-            </article>
-          ))}
+      {message && <p role="status">{message}</p>}
+      {error && (
+        <div role="alert">
+          {error}{" "}
+          <button className={button} onClick={() => setRefresh((v) => v + 1)}>
+            Retry
+          </button>
         </div>
+      )}
+      {loading ? (
+        <p role="status">Loading teachers...</p>
       ) : (
-        <div className="teachers-empty">
-          <Users size={28} />
-          <h3>No teachers found</h3>
-          <p>Try changing your search or filters.</p>
-          <button
-            type="button"
-            className="teachers-btn teachers-btn-secondary"
-            onClick={() => {
-              setQuery("");
-              setSubjectFilter("All subjects");
-              setStatusFilter("All statuses");
+        !error && (
+          <>
+            <div className="teachers-grid">
+              {data?.items.map((t) => (
+                <article className="teachers-card" key={t.id}>
+                  <div
+                    className={`teachers-status ${t.user.isActive ? "" : "is-busy"}`}
+                  >
+                    <span />
+                    {t.user.isActive ? "Active" : "Inactive"}
+                  </div>
+                  <div className="teachers-avatar">
+                    {t.user.fullName
+                      .split(/\s+/)
+                      .slice(-2)
+                      .map((v) => v[0])
+                      .join("")}
+                  </div>
+                  <h3>{t.user.fullName}</h3>
+                  <p className="teachers-subject">
+                    {t.subject || "Subject not provided"}
+                  </p>
+                  <p className="teachers-subject">
+                    {t.employeeCode || "No employee code"}
+                  </p>
+                  <div className="teachers-stats">
+                    <div>
+                      <strong>
+                        {t.classes.filter((c) => !c.archivedAt).length}
+                      </strong>
+                      <span>Active classes</span>
+                    </div>
+                    <div>
+                      <strong>{t.classes.length}</strong>
+                      <span>Total classes</span>
+                    </div>
+                  </div>
+                  <div className="teachers-card-actions">
+                    <button className={button} onClick={() => profile(t)}>
+                      View profile
+                    </button>
+                    <button
+                      className="teachers-icon-btn"
+                      aria-label={`Edit ${t.user.fullName}`}
+                      onClick={() => begin(t)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {data?.items.length === 0 && (
+              <div className="teachers-empty">
+                <h3>No teachers found</h3>
+                <p>Try another search or add a teacher.</p>
+              </div>
+            )}
+            <div className="teachers-modal-actions">
+              <button
+                className={button}
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {Math.max(1, data?.pagination.totalPages ?? 1)}
+              </span>
+              <button
+                className={button}
+                disabled={page >= (data?.pagination.totalPages ?? 1)}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )
+      )}
+      {(form || selected || target) && (
+        <div className="teachers-overlay">
+          <section
+            className="teachers-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="teacher-dialog-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && !busy) {
+                setForm(false);
+                setSelected(null);
+                setTarget(null);
+                setDraft(blank);
+              }
             }}
           >
-            Reset filters
-          </button>
-        </div>
-      )}
-
-      {selected && (
-        <div
-          className="teachers-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setSelected(null);
-          }}
-        >
-          <section
-            className="teachers-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="teacher-details-title"
-          >
             <div className="teachers-modal-head">
-              <h2 id="teacher-details-title">Teacher profile</h2>
-              <button
-                type="button"
-                className="teachers-icon-btn"
-                onClick={() => setSelected(null)}
-                aria-label="Close"
-              >
-                <X size={19} />
-              </button>
-            </div>
-            <div className="teachers-profile">
-              <div
-                className={`teachers-avatar teachers-color-${selected.color}`}
-              >
-                {initials(selected.name)}
-              </div>
-              <h3>{selected.name}</h3>
-              <p>{selected.subject}</p>
-              <span className="teachers-profile-id">{selected.id}</span>
-            </div>
-            <dl className="teachers-profile-details">
-              <div>
-                <dt>Email</dt>
-                <dd>
-                  <a href={`mailto:${selected.email}`}>{selected.email}</a>
-                </dd>
-              </div>
-              <div>
-                <dt>Phone</dt>
-                <dd>{selected.phone || "Not provided"}</dd>
-              </div>
-              <div>
-                <dt>Experience</dt>
-                <dd>{selected.experience} years</dd>
-              </div>
-              <div>
-                <dt>Classes</dt>
-                <dd>
-                  {selected.classes.length
-                    ? selected.classes.join(", ")
-                    : "Not assigned yet"}
-                </dd>
-              </div>
-              <div>
-                <dt>Students</dt>
-                <dd>{selected.studentCount}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd>{selected.status}</dd>
-              </div>
-            </dl>
-            <div className="teachers-modal-actions">
-              <button
-                type="button"
-                className="teachers-btn teachers-btn-danger-outline"
-                onClick={() => {
-                  setDeleteTarget(selected);
-                  setSelected(null);
-                }}
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
-              <button
-                type="button"
-                className="teachers-btn teachers-btn-primary"
-                onClick={() => beginEdit(selected)}
-              >
-                <Pencil size={16} />
-                Edit teacher
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {showForm && (
-        <div
-          className="teachers-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setShowForm(false);
-          }}
-        >
-          <section
-            className="teachers-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="teacher-form-title"
-          >
-            <div className="teachers-modal-head">
-              <h2 id="teacher-form-title">
-                {editing ? "Edit teacher" : "Add new teacher"}
+              <h2 id="teacher-dialog-title">
+                {form
+                  ? editing
+                    ? "Edit teacher"
+                    : "Add new teacher"
+                  : selected
+                    ? "Teacher profile"
+                    : target?.user.isActive
+                      ? "Deactivate teacher"
+                      : "Reactivate teacher"}
               </h2>
               <button
-                type="button"
                 className="teachers-icon-btn"
-                onClick={() => setShowForm(false)}
                 aria-label="Close"
+                disabled={busy}
+                onClick={() => {
+                  setForm(false);
+                  setSelected(null);
+                  setTarget(null);
+                  setDraft(blank);
+                }}
               >
                 <X size={19} />
               </button>
             </div>
-            <p className="teachers-dialog-hint">
-              Information is stored only in this browser session for now.
-            </p>
-            <form onSubmit={saveTeacher}>
-              <div className="teachers-fields">
-                <label>
-                  Full name
-                  <input
-                    required
-                    maxLength={100}
-                    autoFocus
-                    value={draft.name}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, name: e.target.value }))
-                    }
-                    placeholder="Teacher's full name"
-                  />
-                </label>
-                <label>
-                  Subject
-                  <input
-                    required
-                    maxLength={80}
-                    value={draft.subject}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, subject: e.target.value }))
-                    }
-                    placeholder="Mathematics"
-                  />
-                </label>
-                <label className="teachers-span-2">
-                  Email address
-                  <input
-                    required
-                    type="email"
-                    maxLength={120}
-                    value={draft.email}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, email: e.target.value }))
-                    }
-                    placeholder="teacher@school.edu"
-                  />
-                </label>
-                <label>
-                  Phone
-                  <input
-                    type="tel"
-                    maxLength={30}
-                    value={draft.phone}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, phone: e.target.value }))
-                    }
-                    placeholder="Phone number"
-                  />
-                </label>
-                <label>
-                  Years of experience
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={draft.experience}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        experience: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </label>
-                <label className="teachers-span-2">
-                  Availability
-                  <select
-                    value={draft.status}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        status: e.target.value as Teacher["status"],
-                      }))
-                    }
+            {form && (
+              <form onSubmit={save}>
+                <p className="teachers-dialog-hint">
+                  {editing
+                    ? "Update the teacher profile."
+                    : "Set an initial password (12–72 bytes). Share credentials with the teacher through a secure channel."}
+                </p>
+                <div className="teachers-fields">
+                  {(Object.keys(blank) as (keyof typeof blank)[])
+                    .filter((k) => k !== "password" || !editing)
+                    .map((k) => (
+                      <label key={k}>
+                        {
+                          {
+                            fullName: "Full name",
+                            email: "Email address",
+                            employeeCode: "Employee code",
+                            subject: "Subject",
+                            phone: "Phone",
+                            bio: "Biography",
+                            password: "Initial password",
+                          }[k]
+                        }
+                        <input
+                          autoFocus={k === "fullName"}
+                          required={["fullName", "email", "password"].includes(
+                            k,
+                          )}
+                          type={
+                            k === "password"
+                              ? "password"
+                              : k === "email"
+                                ? "email"
+                                : "text"
+                          }
+                          autoComplete={
+                            k === "password" ? "new-password" : "off"
+                          }
+                          minLength={k === "password" ? 12 : undefined}
+                          maxLength={
+                            {
+                              fullName: 120,
+                              email: 254,
+                              employeeCode: 50,
+                              subject: 120,
+                              phone: 30,
+                              bio: 2000,
+                              password: 72,
+                            }[k]
+                          }
+                          value={draft[k]}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, [k]: e.target.value }))
+                          }
+                        />
+                      </label>
+                    ))}
+                </div>
+                {formError && <p role="alert">{formError}</p>}
+                <div className="teachers-modal-actions">
+                  <button
+                    className="teachers-btn teachers-btn-primary"
+                    disabled={busy}
                   >
-                    <option>Available</option>
-                    <option>Busy</option>
-                  </select>
-                </label>
-              </div>
-              <div className="teachers-modal-actions">
-                <button
-                  type="button"
-                  className="teachers-btn teachers-btn-secondary"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="teachers-btn teachers-btn-primary"
-                >
-                  <Check size={16} />
-                  {editing ? "Save changes" : "Add Teacher"}
-                </button>
-              </div>
-            </form>
+                    {busy ? "Saving..." : "Save teacher"}
+                  </button>
+                </div>
+              </form>
+            )}
+            {selected && (
+              <>
+                <div className="teachers-profile">
+                  <h3>{selected.user.fullName}</h3>
+                  <p>{selected.subject}</p>
+                </div>
+                <dl className="teachers-profile-details">
+                  {Object.entries({
+                    Email: selected.user.email,
+                    Phone: selected.phone,
+                    "Employee code": selected.employeeCode,
+                    Biography: selected.bio,
+                    Status: selected.user.isActive ? "Active" : "Inactive",
+                    Classes: selected.classes
+                      .map(
+                        (c) => `${c.name}${c.archivedAt ? " (archived)" : ""}`,
+                      )
+                      .join(", "),
+                  }).map(([k, v]) => (
+                    <div key={k}>
+                      <dt>{k}</dt>
+                      <dd>{v || "Not provided"}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="teachers-modal-actions">
+                  <button
+                    className={button}
+                    onClick={() => {
+                      setTarget(selected);
+                      setSelected(null);
+                      setFormError("");
+                    }}
+                  >
+                    {selected.user.isActive ? "Deactivate" : "Reactivate"}
+                  </button>
+                  <button className={button} onClick={() => begin(selected)}>
+                    Edit teacher
+                  </button>
+                </div>
+              </>
+            )}
+            {target && (
+              <>
+                <p>
+                  {target.user.isActive
+                    ? "Reassign all active classes first. Historical records will be preserved and account access will be disabled."
+                    : "Restore access using the existing account and password."}
+                </p>
+                <p>{target.user.fullName}</p>
+                {formError && <p role="alert">{formError}</p>}
+                <div className="teachers-modal-actions">
+                  <button
+                    className="teachers-btn teachers-btn-primary"
+                    disabled={busy}
+                    onClick={changeStatus}
+                  >
+                    {busy ? "Saving..." : "Confirm"}
+                  </button>
+                </div>
+              </>
+            )}
           </section>
-        </div>
-      )}
-
-      {deleteTarget && (
-        <div
-          className="teachers-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setDeleteTarget(null);
-          }}
-        >
-          <section
-            className="teachers-modal teachers-confirm"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="teacher-delete-title"
-          >
-            <div className="teachers-modal-head">
-              <h2 id="teacher-delete-title">Delete teacher?</h2>
-              <button
-                type="button"
-                className="teachers-icon-btn"
-                onClick={() => setDeleteTarget(null)}
-                aria-label="Close"
-              >
-                <X size={19} />
-              </button>
-            </div>
-            <p>
-              Remove <strong>{deleteTarget.name}</strong> from the local demo
-              list? This does not change any school database.
-            </p>
-            <div className="teachers-modal-actions">
-              <button
-                type="button"
-                className="teachers-btn teachers-btn-secondary"
-                onClick={() => setDeleteTarget(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="teachers-btn teachers-btn-danger"
-                onClick={removeTeacher}
-              >
-                <Trash2 size={16} />
-                Delete teacher
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {message && (
-        <div className="teachers-toast" role="status">
-          <span>{message}</span>
-          <button
-            type="button"
-            onClick={() => setMessage("")}
-            aria-label="Dismiss message"
-          >
-            <X size={15} />
-          </button>
         </div>
       )}
     </div>

@@ -542,3 +542,11 @@
     flex-wrap: wrap;
   }
 }
+
+.teachers-stats {
+  grid-template-columns: repeat(2, 1fr);
+}
+.teachers-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
