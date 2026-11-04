@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (expiresAt === null || expiresAt <= Date.now()) {
         if (!cancelled) {
-          endSession("expired");
+          endSession(expiresAt === null ? null : "expired");
           setIsInitializing(false);
         }
 
