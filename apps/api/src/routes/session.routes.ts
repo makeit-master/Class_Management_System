@@ -70,6 +70,33 @@ const updateSessionSchema = z
     message: "At least one field is required.",
   });
 
+const attendanceRecordSchema = z
+  .object({
+    enrollmentId: z.uuid(),
+    status: z.enum(["PRESENT", "ABSENT"]),
+  })
+  .strict();
+
+const markAttendanceSchema = z
+  .object({
+    records: z
+      .array(attendanceRecordSchema)
+      .min(1, "At least one attendance record is required.")
+      .max(200, "Maximum 200 attendance records per request."),
+  })
+  .strict()
+  .refine(
+    (data) => {
+      const ids = data.records.map((record) => record.enrollmentId);
+
+      return new Set(ids).size === ids.length;
+    },
+    {
+      message: "Duplicate enrollmentId is not allowed.",
+      path: ["records"],
+    },
+  );
+
 // ============================================================
 // GET /api/classes/:classId/sessions
 // List sessions belonging to a class.
@@ -116,6 +143,11 @@ sessionRouter.get(
 
       const prisma = getPrisma();
       const currentUser = req.authUser!;
+
+      if (currentUser.role !== "ADMIN" && currentUser.role !== "TEACHER") {
+        sendError(res, 403, "FORBIDDEN", "Access denied.");
+        return;
+      }
 
       const targetClass = await prisma.class.findUnique({
         where: {
@@ -1003,6 +1035,209 @@ sessionRouter.get(
         },
       });
     } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * M18.3.3 - Mark / Update Attendance
+ *
+ * PUT /api/sessions/:id/attendance
+ * ADMIN: All active classes
+ * TEACHER: Assigned classes only
+ */
+sessionRouter.put(
+  "/sessions/:id/attendance",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const parsedId = uuidSchema.safeParse(req.params.id);
+
+      if (!parsedId.success) {
+        sendError(res, 400, "VALIDATION_ERROR", "Invalid session ID.");
+        return;
+      }
+
+      const parsedBody = markAttendanceSchema.safeParse(req.body);
+
+      if (!parsedBody.success) {
+        sendError(
+          res,
+          400,
+          "VALIDATION_ERROR",
+          "Invalid attendance data.",
+          z.flattenError(parsedBody.error),
+        );
+        return;
+      }
+
+      const currentUser = req.authUser!;
+
+      if (currentUser.role !== "ADMIN" && currentUser.role !== "TEACHER") {
+        sendError(res, 403, "FORBIDDEN", "Access denied.");
+        return;
+      }
+
+      const prisma = getPrisma();
+      const sessionId = parsedId.data;
+      const records = parsedBody.data.records;
+
+      const enrollmentIds = records.map((record) => record.enrollmentId);
+
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // 1. Load session and check class.
+          const session = await tx.classSession.findUnique({
+            where: { id: sessionId },
+            select: {
+              id: true,
+              classId: true,
+              startsAt: true,
+              status: true,
+              class: {
+                select: {
+                  teacherId: true,
+                  archivedAt: true,
+                },
+              },
+            },
+          });
+
+          if (!session || session.class.archivedAt !== null) {
+            return { kind: "NOT_FOUND" } as const;
+          }
+
+          // 2. Check teacher ownership.
+          if (
+            currentUser.role === "TEACHER" &&
+            session.class.teacherId !== currentUser.teacherId
+          ) {
+            return { kind: "FORBIDDEN" } as const;
+          }
+
+          // 3. Only scheduled sessions can be marked.
+          if (session.status !== "SCHEDULED") {
+            return { kind: "INVALID_STATUS" } as const;
+          }
+
+          // 4. Check EnrollmentPeriod eligibility.
+          const eligibleEnrollments = await tx.enrollment.findMany({
+            where: {
+              id: { in: enrollmentIds },
+              classId: session.classId,
+              periods: {
+                some: {
+                  startedAt: {
+                    lte: session.startsAt,
+                  },
+                  OR: [
+                    { endedAt: null },
+                    {
+                      endedAt: {
+                        gt: session.startsAt,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            select: { id: true },
+          });
+
+          if (eligibleEnrollments.length !== records.length) {
+            return { kind: "INVALID_ENROLLMENTS" } as const;
+          }
+
+          // 5. Insert or update attendance atomically.
+          const markedAt = new Date();
+
+          for (const record of records) {
+            await tx.attendance.upsert({
+              where: {
+                enrollmentId_sessionId: {
+                  enrollmentId: record.enrollmentId,
+                  sessionId,
+                },
+              },
+              create: {
+                enrollmentId: record.enrollmentId,
+                sessionId,
+                status: record.status,
+                markedAt,
+              },
+              update: {
+                status: record.status,
+                markedAt,
+              },
+            });
+          }
+
+          return {
+            kind: "SUCCESS",
+            markedAt,
+          } as const;
+        },
+        {
+          isolationLevel: "Serializable",
+        },
+      );
+
+      // 6. Handle business errors.
+      switch (result.kind) {
+        case "NOT_FOUND":
+          sendError(res, 404, "SESSION_NOT_FOUND", "Session not found.");
+          return;
+
+        case "FORBIDDEN":
+          sendError(res, 403, "FORBIDDEN", "Access denied.");
+          return;
+
+        case "INVALID_STATUS":
+          sendError(
+            res,
+            409,
+            "INVALID_SESSION_STATUS",
+            "Only scheduled sessions can be marked.",
+          );
+          return;
+
+        case "INVALID_ENROLLMENTS":
+          sendError(
+            res,
+            400,
+            "INVALID_ENROLLMENTS",
+            "One or more students are not eligible for this session.",
+          );
+          return;
+      }
+
+      // 7. Success.
+      res.status(200).json({
+        success: true,
+        data: {
+          sessionId,
+          updatedCount: records.length,
+          markedAt: result.markedAt,
+          records,
+        },
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error.code === "P2034" || error.code === "P2002")
+      ) {
+        sendError(
+          res,
+          409,
+          "ATTENDANCE_CONFLICT",
+          "Attendance changed concurrently. Please retry.",
+        );
+        return;
+      }
+
       next(error);
     }
   },
