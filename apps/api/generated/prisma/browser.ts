@@ -43,6 +43,11 @@ export type Class = Prisma.ClassModel
  */
 export type Enrollment = Prisma.EnrollmentModel
 /**
+ * Model EnrollmentPeriod
+ * 
+ */
+export type EnrollmentPeriod = Prisma.EnrollmentPeriodModel
+/**
  * Model Schedule
  * 
  */

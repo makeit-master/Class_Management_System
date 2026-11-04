@@ -402,6 +402,7 @@ export const ModelName = {
   Student: 'Student',
   Class: 'Class',
   Enrollment: 'Enrollment',
+  EnrollmentPeriod: 'EnrollmentPeriod',
   Schedule: 'Schedule',
   ClassSession: 'ClassSession',
   Attendance: 'Attendance',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "teacher" | "student" | "class" | "enrollment" | "schedule" | "classSession" | "attendance" | "assessment" | "grade"
+    modelProps: "user" | "teacher" | "student" | "class" | "enrollment" | "enrollmentPeriod" | "schedule" | "classSession" | "attendance" | "assessment" | "grade"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -793,6 +794,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EnrollmentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EnrollmentCountAggregateOutputType> | number
+        }
+      }
+    }
+    EnrollmentPeriod: {
+      payload: Prisma.$EnrollmentPeriodPayload<ExtArgs>
+      fields: Prisma.EnrollmentPeriodFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EnrollmentPeriodFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EnrollmentPeriodFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        findFirst: {
+          args: Prisma.EnrollmentPeriodFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EnrollmentPeriodFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        findMany: {
+          args: Prisma.EnrollmentPeriodFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>[]
+        }
+        create: {
+          args: Prisma.EnrollmentPeriodCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        createMany: {
+          args: Prisma.EnrollmentPeriodCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EnrollmentPeriodCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>[]
+        }
+        delete: {
+          args: Prisma.EnrollmentPeriodDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        update: {
+          args: Prisma.EnrollmentPeriodUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        deleteMany: {
+          args: Prisma.EnrollmentPeriodDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EnrollmentPeriodUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EnrollmentPeriodUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>[]
+        }
+        upsert: {
+          args: Prisma.EnrollmentPeriodUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EnrollmentPeriodPayload>
+        }
+        aggregate: {
+          args: Prisma.EnrollmentPeriodAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEnrollmentPeriod>
+        }
+        groupBy: {
+          args: Prisma.EnrollmentPeriodGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EnrollmentPeriodGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EnrollmentPeriodCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EnrollmentPeriodCountAggregateOutputType> | number
         }
       }
     }
@@ -1278,6 +1353,16 @@ export const EnrollmentScalarFieldEnum = {
 export type EnrollmentScalarFieldEnum = (typeof EnrollmentScalarFieldEnum)[keyof typeof EnrollmentScalarFieldEnum]
 
 
+export const EnrollmentPeriodScalarFieldEnum = {
+  id: 'id',
+  enrollmentId: 'enrollmentId',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt'
+} as const
+
+export type EnrollmentPeriodScalarFieldEnum = (typeof EnrollmentPeriodScalarFieldEnum)[keyof typeof EnrollmentPeriodScalarFieldEnum]
+
+
 export const ScheduleScalarFieldEnum = {
   id: 'id',
   classId: 'classId',
@@ -1662,6 +1747,7 @@ export type GlobalOmitConfig = {
   student?: Prisma.StudentOmit
   class?: Prisma.ClassOmit
   enrollment?: Prisma.EnrollmentOmit
+  enrollmentPeriod?: Prisma.EnrollmentPeriodOmit
   schedule?: Prisma.ScheduleOmit
   classSession?: Prisma.ClassSessionOmit
   attendance?: Prisma.AttendanceOmit

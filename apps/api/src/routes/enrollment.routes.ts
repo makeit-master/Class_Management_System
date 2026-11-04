@@ -271,31 +271,33 @@ enrollmentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
       });
 
       if (existing) {
-        // Already enrolled in this class.
+        // Reject duplicate active enrollment.
         if (existing.status === "ACTIVE") {
           throw new HttpError(409, "Student is already enrolled in this class");
         }
 
-        // ===============================================
-        // 6A. REACTIVATE DROPPED ENROLLMENT
-        // ===============================================
-
+        // Re-activate the original enrollment without changing its ID/enrolledAt.
         const updated = await tx.enrollment.updateMany({
-          where: {
-            id: existing.id,
-            status: "DROPPED",
-          },
-          data: {
-            status: "ACTIVE",
-          },
+          where: { id: existing.id, status: "DROPPED" },
+          data: { status: "ACTIVE" },
         });
 
-        if (updated.count === 0) {
+        if (updated.count !== 1) {
           throw new HttpError(
             409,
             "Enrollment status changed. Please try again.",
           );
         }
+
+        // Record the new period in the same transaction.
+        // The migration's partial unique index allows only one open period.
+        await tx.enrollmentPeriod.create({
+          data: {
+            enrollmentId: existing.id,
+            startedAt: new Date(),
+            endedAt: null,
+          },
+        });
 
         const enrollment = await tx.enrollment.findUniqueOrThrow({
           where: { id: existing.id },
@@ -308,22 +310,17 @@ enrollmentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
           },
         });
 
-        return {
-          httpStatus: 200,
-          reactivated: true,
-          enrollment,
-        };
+        return { httpStatus: 200, reactivated: true, enrollment };
       }
 
-      // =================================================
-      // 6B. CREATE NEW ENROLLMENT
-      // =================================================
-
+      // New enrollment: create its first participation period atomically.
+      const enrolledAt = new Date();
       const enrollment = await tx.enrollment.create({
         data: {
           studentId,
           classId,
           status: "ACTIVE",
+          enrolledAt,
         },
         select: {
           id: true,
@@ -334,11 +331,15 @@ enrollmentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
         },
       });
 
-      return {
-        httpStatus: 201,
-        reactivated: false,
-        enrollment,
-      };
+      await tx.enrollmentPeriod.create({
+        data: {
+          enrollmentId: enrollment.id,
+          startedAt: enrolledAt,
+          endedAt: null,
+        },
+      });
+
+      return { httpStatus: 201, reactivated: false, enrollment };
     });
 
     // =====================================================
@@ -380,93 +381,91 @@ enrollmentRouter.post("/", requireRole("ADMIN"), async (req, res, next) => {
  * - Preserve enrollment ID
  * - Preserve attendance and grade history
  */
+
 enrollmentRouter.patch(
   "/:id/drop",
   requireRole("ADMIN"),
   async (req, res, next) => {
     try {
-      // ============================================
-      // 1. VALIDATE ENROLLMENT ID
-      // ============================================
-
       const parsedId = enrollmentIdSchema.safeParse(req.params.id);
 
       if (!parsedId.success) {
         throw new HttpError(400, "Invalid enrollment ID");
       }
 
-      const enrollmentId = parsedId.data;
       const prisma = getPrisma();
+      const enrollmentId = parsedId.data;
 
-      // ============================================
-      // 2. FIND EXISTING ENROLLMENT
-      // ============================================
+      const updatedEnrollment = await prisma.$transaction(async (tx) => {
+        // 1. Verify enrollment existence.
+        const existingEnrollment = await tx.enrollment.findUnique({
+          where: { id: enrollmentId },
+          select: {
+            id: true,
+            status: true,
+          },
+        });
 
-      const existingEnrollment = await prisma.enrollment.findUnique({
-        where: {
-          id: enrollmentId,
-        },
-        select: {
-          id: true,
-          status: true,
-          studentId: true,
-          classId: true,
-        },
+        if (!existingEnrollment) {
+          throw new HttpError(404, "Enrollment not found");
+        }
+
+        if (existingEnrollment.status === "DROPPED") {
+          throw new HttpError(409, "Student has already dropped this class");
+        }
+
+        // 2. Change ACTIVE -> DROPPED.
+        const droppedAt = new Date();
+        const result = await tx.enrollment.updateMany({
+          where: {
+            id: enrollmentId,
+            status: "ACTIVE",
+          },
+          data: {
+            status: "DROPPED",
+          },
+        });
+
+        if (result.count !== 1) {
+          throw new HttpError(
+            409,
+            "Enrollment status changed. Please try again.",
+          );
+        }
+
+        // 3. Close the currently open period.
+        const closed = await tx.enrollmentPeriod.updateMany({
+          where: {
+            enrollmentId,
+            endedAt: null,
+            startedAt: { lte: droppedAt },
+          },
+          data: {
+            endedAt: droppedAt,
+          },
+        });
+
+        if (closed.count !== 1) {
+          throw new HttpError(
+            409,
+            "Enrollment must have exactly one open period.",
+          );
+        }
+
+        // 4. Fetch the updated enrollment.
+        return tx.enrollment.findUniqueOrThrow({
+          where: {
+            id: enrollmentId,
+          },
+          select: {
+            id: true,
+            studentId: true,
+            classId: true,
+            status: true,
+            enrolledAt: true,
+          },
+        });
       });
-
-      if (!existingEnrollment) {
-        throw new HttpError(404, "Enrollment not found");
-      }
-
-      // ============================================
-      // 3. VERIFY CURRENT STATUS
-      // ============================================
-
-      if (existingEnrollment.status === "DROPPED") {
-        throw new HttpError(409, "Student has already dropped this class");
-      }
-
-      // ============================================
-      // 4. ATOMIC STATUS UPDATE
-      // ============================================
-
-      const result = await prisma.enrollment.updateMany({
-        where: {
-          id: enrollmentId,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "DROPPED",
-        },
-      });
-
-      if (result.count === 0) {
-        throw new HttpError(
-          409,
-          "Enrollment status changed. Please try again.",
-        );
-      }
-
-      // ============================================
-      // 5. FETCH UPDATED ENROLLMENT
-      // ============================================
-
-      const updatedEnrollment = await prisma.enrollment.findUniqueOrThrow({
-        where: {
-          id: enrollmentId,
-        },
-        select: {
-          id: true,
-          studentId: true,
-          classId: true,
-          status: true,
-          enrolledAt: true,
-        },
-      });
-
-      // ============================================
-      // 6. RESPONSE
-      // ============================================
 
       res.status(200).json({
         success: true,

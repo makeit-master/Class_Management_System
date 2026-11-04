@@ -94,19 +94,18 @@ model Student {
   @@index([archivedAt])
 }
 
-
 // Class managed by a teacher
 model Class {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
   subject     String?
   room        String?
   teacherId   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  archivedAt  DateTime?
+  archivedAt DateTime?
 
   teacher     Teacher        @relation(fields: [teacherId], references: [id])
   enrollments Enrollment[]
@@ -118,7 +117,6 @@ model Class {
   @@index([archivedAt])
 }
 
-
 // Many-to-many relationship between Student and Class
 model Enrollment {
   id         String           @id @default(uuid())
@@ -127,13 +125,25 @@ model Enrollment {
   status     EnrollmentStatus @default(ACTIVE)
   enrolledAt DateTime         @default(now())
 
-  student    Student      @relation(fields: [studentId], references: [id])
-  class      Class        @relation(fields: [classId], references: [id])
+  student    Student            @relation(fields: [studentId], references: [id])
+  class      Class              @relation(fields: [classId], references: [id])
   attendance Attendance[]
   grades     Grade[]
+  periods    EnrollmentPeriod[]
 
   @@unique([studentId, classId])
   @@index([classId])
+}
+
+model EnrollmentPeriod {
+  id           String    @id @default(uuid())
+  enrollmentId String
+  startedAt    DateTime
+  endedAt      DateTime?
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@index([enrollmentId, startedAt])
 }
 
 // Recurring teaching schedule
